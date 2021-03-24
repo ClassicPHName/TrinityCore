@@ -3909,6 +3909,11 @@ Optional<SpellPowerCost> SpellInfo::CalcPowerCost(SpellPowerEntry const* power, 
 
                 powerCost += aura->GetAmount();
             }
+
+            if (power->PowerType == POWER_MANA)
+                flatMod *= 1.0f + caster->m_unitData->ManaCostModifierModifier;
+
+            powerCost += flatMod;
         }
 
         // PCT mod from user auras by spell school and power type
