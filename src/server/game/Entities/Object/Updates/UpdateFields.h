@@ -177,8 +177,8 @@ struct UnlockedAzeriteEssence : public IsUpdateFieldStructureTag
 
 struct SelectedAzeriteEssences : public IsUpdateFieldStructureTag, public HasChangesMask<8>
 {
-    UpdateField<bool, 0, 1> Enabled;
-    UpdateField<uint32, 0, 2> SpecializationID;
+    UpdateField<uint32, 0, 1> SpecializationID;
+    UpdateField<uint32, 0, 2> Enabled;
     UpdateFieldArray<uint32, 4, 3, 4> AzeriteEssenceID;
 
     void WriteCreate(ByteBuffer& data, AzeriteItem const* owner, Player const* receiver) const;
@@ -920,7 +920,7 @@ struct ConversationActor : public IsUpdateFieldStructureTag
     uint32 CreatureID;
     uint32 CreatureDisplayInfoID;
     ObjectGuid ActorGUID;
-    int32 Id;
+    int32 Field_18;
     uint32 Type;
     uint32 NoActorObject;
 
@@ -935,7 +935,7 @@ struct ConversationData : public IsUpdateFieldStructureTag, public HasChangesMas
     UpdateField<std::vector<UF::ConversationLine>, 0, 1> Lines;
     DynamicUpdateField<UF::ConversationActor, 0, 2> Actors;
     UpdateField<int32, 0, 3> LastLineEndTime;
-    UpdateField<uint32, 0, 4> Progress;
+    UpdateField<uint32, 0, 4> Field_1C;
 
     void WriteCreate(ByteBuffer& data, EnumFlag<UpdateFieldFlag> fieldVisibilityFlags, Conversation const* owner, Player const* receiver) const;
     void WriteUpdate(ByteBuffer& data, EnumFlag<UpdateFieldFlag> fieldVisibilityFlags, Conversation const* owner, Player const* receiver) const;

@@ -624,7 +624,7 @@ void SelectedAzeriteEssences::WriteCreate(ByteBuffer& data, AzeriteItem const* o
         data << uint32(AzeriteEssenceID[i]);
     }
     data << uint32(SpecializationID);
-    data.WriteBit(Enabled);
+    data.WriteBits(Enabled, 1);
     data.FlushBits();
 }
 
@@ -638,19 +638,16 @@ void SelectedAzeriteEssences::WriteUpdate(ByteBuffer& data, bool ignoreChangesMa
     if (changesMask.GetBlock(0))
         data.WriteBits(changesMask.GetBlock(0), 32);
 
+    data.FlushBits();
     if (changesMask[0])
     {
         if (changesMask[1])
         {
-            data.WriteBit(Enabled);
+            data << uint32(SpecializationID);
         }
-    }
-    data.FlushBits();
-    if (changesMask[0])
-    {
         if (changesMask[2])
         {
-            data << uint32(SpecializationID);
+            data.WriteBits(Enabled, 1);
         }
     }
     if (changesMask[3])
@@ -668,8 +665,8 @@ void SelectedAzeriteEssences::WriteUpdate(ByteBuffer& data, bool ignoreChangesMa
 
 void SelectedAzeriteEssences::ClearChangesMask()
 {
-    Base::ClearChangesMask(Enabled);
     Base::ClearChangesMask(SpecializationID);
+    Base::ClearChangesMask(Enabled);
     Base::ClearChangesMask(AzeriteEssenceID);
     _changesMask.ResetAll();
 }
@@ -695,6 +692,7 @@ void AzeriteItemData::WriteCreate(ByteBuffer& data, EnumFlag<UpdateFieldFlag> fi
     {
         data << uint32(UnlockedEssenceMilestones[i]);
     }
+    data.FlushBits();
     if (fieldVisibilityFlags.HasFlag(UpdateFieldFlag::Owner))
     {
         data.WriteBit(Enabled);
@@ -2142,6 +2140,7 @@ void PlayerData::WriteCreate(ByteBuffer& data, EnumFlag<UpdateFieldFlag> fieldVi
     {
         ArenaCooldowns[i].WriteCreate(data, owner, receiver);
     }
+    data.FlushBits();
     if (fieldVisibilityFlags.HasFlag(UpdateFieldFlag::PartyMember))
     {
         data.WriteBit(HasQuestSession);
@@ -4620,6 +4619,7 @@ void ScaleCurve::WriteCreate(ByteBuffer& data, AreaTrigger const* owner, Player 
         data << Points[i];
     }
     data << uint32(ParameterCurve);
+    data.FlushBits();
     data.WriteBit(OverrideActive);
     data.FlushBits();
 }
@@ -4858,7 +4858,7 @@ void ConversationActor::WriteCreate(ByteBuffer& data, Conversation const* owner,
     data << uint32(CreatureID);
     data << uint32(CreatureDisplayInfoID);
     data << ActorGUID;
-    data << int32(Id);
+    data << int32(Field_18);
     data.WriteBits(Type, 1);
     data.WriteBits(NoActorObject, 1);
     data.FlushBits();
@@ -4869,7 +4869,7 @@ void ConversationActor::WriteUpdate(ByteBuffer& data, bool ignoreChangesMask, Co
     data << uint32(CreatureID);
     data << uint32(CreatureDisplayInfoID);
     data << ActorGUID;
-    data << int32(Id);
+    data << int32(Field_18);
     data.WriteBits(Type, 1);
     data.WriteBits(NoActorObject, 1);
     data.FlushBits();
@@ -4880,7 +4880,7 @@ bool ConversationActor::operator==(ConversationActor const& right) const
     return CreatureID == right.CreatureID
         && CreatureDisplayInfoID == right.CreatureDisplayInfoID
         && ActorGUID == right.ActorGUID
-        && Id == right.Id
+        && Field_18 == right.Field_18
         && Type == right.Type
         && NoActorObject == right.NoActorObject;
 }
@@ -4889,7 +4889,7 @@ void ConversationData::WriteCreate(ByteBuffer& data, EnumFlag<UpdateFieldFlag> f
 {
     data << uint32(Lines->size());
     data << int32(LastLineEndTime);
-    data << uint32(Progress);
+    data << uint32(Field_1C);
     for (std::size_t i = 0; i < Lines->size(); ++i)
     {
         (*Lines)[i].WriteCreate(data, owner, receiver);
@@ -4951,7 +4951,7 @@ void ConversationData::WriteUpdate(ByteBuffer& data, Mask const& changesMask, bo
         }
         if (changesMask[4])
         {
-            data << uint32(Progress);
+            data << uint32(Field_1C);
         }
     }
 }
@@ -4961,7 +4961,7 @@ void ConversationData::ClearChangesMask()
     Base::ClearChangesMask(Lines);
     Base::ClearChangesMask(Actors);
     Base::ClearChangesMask(LastLineEndTime);
-    Base::ClearChangesMask(Progress);
+    Base::ClearChangesMask(Field_1C);
     _changesMask.ResetAll();
 }
 
