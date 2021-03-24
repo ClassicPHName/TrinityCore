@@ -16845,20 +16845,6 @@ void Player::SetQuestSlotTimer(uint16 slot, uint32 timer)
         .ModifyValue(&UF::QuestLog::EndTime), timer);
 }
 
-void Player::SetQuestSlotObjectiveFlag(uint16 slot, int8 objectiveIndex)
-{
-    SetUpdateFieldFlagValue(m_values.ModifyValue(&Player::m_playerData)
-        .ModifyValue(&UF::PlayerData::QuestLog, slot)
-        .ModifyValue(&UF::QuestLog::ObjectiveFlags), 1 << objectiveIndex);
-}
-
-void Player::RemoveQuestSlotObjectiveFlag(uint16 slot, int8 objectiveIndex)
-{
-    RemoveUpdateFieldFlagValue(m_values.ModifyValue(&Player::m_playerData)
-        .ModifyValue(&UF::PlayerData::QuestLog, slot)
-        .ModifyValue(&UF::QuestLog::ObjectiveFlags), 1 << objectiveIndex);
-}
-
 void Player::SetQuestCompletedBit(uint32 questBit, bool completed)
 {
     if (!questBit)
@@ -17555,9 +17541,9 @@ void Player::SetQuestObjectiveData(QuestObjective const& objective, int32 data)
         if (!objective.IsStoringFlag())
             SetQuestSlotCounter(log_slot, objective.StorageIndex, status.ObjectiveData[objective.StorageIndex]);
         else if (data)
-            SetQuestSlotObjectiveFlag(log_slot, objective.StorageIndex);
+            SetQuestSlotState(log_slot, 256 << objective.StorageIndex);
         else
-            RemoveQuestSlotObjectiveFlag(log_slot, objective.StorageIndex);
+            RemoveQuestSlotState(log_slot, 256 << objective.StorageIndex);
     }
 }
 
@@ -19767,7 +19753,7 @@ void Player::_LoadQuestStatusObjectives(PreparedQueryResult result)
                     if (!objectiveItr->IsStoringFlag())
                         SetQuestSlotCounter(slot, objectiveIndex, data);
                     else if (data)
-                        SetQuestSlotObjectiveFlag(slot, objectiveIndex);
+                        SetQuestSlotState(slot, 256 << objectiveIndex);
                 }
                 else
                     TC_LOG_ERROR("entities.player", "Player::_LoadQuestStatusObjectives: Player '%s' (%s) has quest %d out of range objective index %u.", GetName().c_str(), GetGUID().ToString().c_str(), questID, objectiveIndex);
