@@ -4418,7 +4418,6 @@ Corpse* Player::CreateCorpse()
 
     corpse->SetRace(getRace());
     corpse->SetSex(GetNativeSex());
-    corpse->SetClass(getClass());
     corpse->SetCustomizations(Trinity::Containers::MakeIteratorPair(m_playerData->Customizations.begin(), m_playerData->Customizations.end()));
     corpse->SetFlags(flags);
     corpse->SetDisplayId(GetNativeDisplayId());
