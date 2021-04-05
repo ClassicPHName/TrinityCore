@@ -480,7 +480,7 @@ bool Guild::BankTab::SetItem(CharacterDatabaseTransaction& trans, uint8 slotId, 
         stmt->setUInt64(3, item->GetGUID().GetCounter());
         trans->Append(stmt);
 
-        item->SetContainedIn(ObjectGuid::Empty);
+        item->SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid::Empty);
         item->SetOwnerGUID(ObjectGuid::Empty);
         item->FSetState(ITEM_NEW);
         item->SaveToDB(trans);                                 // Not in inventory and can be saved standalone
@@ -535,7 +535,7 @@ void Guild::Member::SetStats(Player* player)
     m_name      = player->GetName();
     m_level     = player->getLevel();
     m_class     = player->getClass();
-    _gender     = player->GetNativeSex();
+    _gender     = player->GetByteValue(PLAYER_BYTES_3, PLAYER_BYTES_3_OFFSET_GENDER);
     m_zoneId    = player->GetZoneId();
     m_accountId = player->GetSession()->GetAccountId();
     m_achievementPoints = player->GetAchievementPoints();
@@ -3344,9 +3344,9 @@ void Guild::_SendBankContentUpdate(uint8 tabId, SlotIds slots) const
             if (tabItem)
             {
                 uint8 i = 0;
-                for (UF::SocketedGem const& gemData : tabItem->m_itemData->Gems)
+                for (ItemDynamicFieldGems const& gemData : tabItem->GetGems())
                 {
-                    if (gemData.ItemID)
+                    if (gemData.ItemId)
                     {
                         WorldPackets::Item::ItemGemData gem;
                         gem.Slot = i;
@@ -3421,14 +3421,14 @@ void Guild::SendBankList(WorldSession* session, uint8 tabId, bool fullUpdate) co
                     itemInfo.Item.ItemID = tabItem->GetEntry();
                     itemInfo.Count = int32(tabItem->GetCount());
                     itemInfo.Charges = int32(abs(tabItem->GetSpellCharges()));
-                    itemInfo.EnchantmentID = int32(tabItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT));
-                    itemInfo.OnUseEnchantmentID = int32(tabItem->GetEnchantmentId(USE_ENCHANTMENT_SLOT));
-                    itemInfo.Flags = tabItem->m_itemData->DynamicFlags;
+                    itemInfo.EnchantmentID = int32(tabItem->GetItemRandomPropertyId()); // verify that...
+                    itemInfo.OnUseEnchantmentID = 0/*int32(tabItem->GetItemSuffixFactor())*/;
+                    itemInfo.Flags = 0;
 
                     uint8 i = 0;
-                    for (UF::SocketedGem const& gemData : tabItem->m_itemData->Gems)
+                    for (ItemDynamicFieldGems const& gemData : tabItem->GetGems())
                     {
-                        if (gemData.ItemID)
+                        if (gemData.ItemId)
                         {
                             WorldPackets::Item::ItemGemData gem;
                             gem.Slot = i;

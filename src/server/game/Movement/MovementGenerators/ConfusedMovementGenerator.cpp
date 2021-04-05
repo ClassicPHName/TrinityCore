@@ -36,7 +36,7 @@ void ConfusedMovementGenerator<T>::DoInitialize(T* owner)
         return;
 
     owner->AddUnitState(UNIT_STATE_CONFUSED);
-    owner->AddUnitFlag(UNIT_FLAG_CONFUSED);
+    owner->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CONFUSED);
     owner->StopMoving();
 
     _timer.Reset(0);
@@ -103,15 +103,15 @@ void ConfusedMovementGenerator<T>::DoFinalize(T*) { }
 template<>
 void ConfusedMovementGenerator<Player>::DoFinalize(Player* unit)
 {
-    unit->RemoveUnitFlag(UNIT_FLAG_CONFUSED);
-    unit->ClearUnitState(UNIT_STATE_CONFUSED);
+    unit->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CONFUSED);
+    unit->ClearUnitState(UNIT_STATE_CONFUSED | UNIT_STATE_CONFUSED_MOVE);
     unit->StopMoving();
 }
 
 template<>
 void ConfusedMovementGenerator<Creature>::DoFinalize(Creature* unit)
 {
-    unit->RemoveUnitFlag(UNIT_FLAG_CONFUSED);
+    unit->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CONFUSED);
     unit->ClearUnitState(UNIT_STATE_CONFUSED | UNIT_STATE_CONFUSED_MOVE);
     if (unit->GetVictim())
         unit->SetTarget(unit->EnsureVictim()->GetGUID());

@@ -303,7 +303,7 @@ class npc_warden_mellichar : public CreatureScript
             {
                 Initialize();
 
-                me->AddUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                 DoCast(me, SPELL_TARGET_OMEGA);
 
                 instance->SetBossState(DATA_HARBINGER_SKYRISS, NOT_STARTED);
@@ -538,9 +538,9 @@ class npc_zerekethvoidzone : public CreatureScript
 
             void Reset() override
             {
-                me->SetNpcFlags(UNIT_NPC_FLAG_NONE);
+                me->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
                 me->SetFaction(FACTION_MONSTER_2);
-                me->AddUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
 
                 DoCast(me, SPELL_VOID_ZONE_DAMAGE);
             }

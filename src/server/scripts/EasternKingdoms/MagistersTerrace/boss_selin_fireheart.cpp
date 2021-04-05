@@ -82,7 +82,6 @@ class boss_selin_fireheart : public CreatureScript
 
                 for (Creature* creature : crystals)
                     creature->Respawn(true);
-
                 _Reset();
                 CrystalGUID.Clear();
                 _scheduledEvents = false;
@@ -153,7 +152,7 @@ class boss_selin_fireheart : public CreatureScript
                     Unit* CrystalChosen = ObjectAccessor::GetUnit(*me, CrystalGUID);
                     if (CrystalChosen && CrystalChosen->IsAlive())
                     {
-                        CrystalChosen->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
+                        CrystalChosen->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                         CrystalChosen->CastSpell(me, SPELL_MANA_RAGE, true);
                         events.ScheduleEvent(EVENT_EMPOWER, 10000, PHASE_DRAIN);
                     }

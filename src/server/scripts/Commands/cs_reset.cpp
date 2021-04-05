@@ -83,7 +83,8 @@ public:
         if (!handler->extractPlayerTarget((char*)args, &target))
             return false;
 
-        target->ResetHonorStats();
+        target->SetUInt32Value(ACTIVE_PLAYER_FIELD_KILLS, 0);
+        target->SetUInt32Value(ACTIVE_PLAYER_FIELD_LIFETIME_HONORABLE_KILLS, 0);
         target->UpdateCriteria(CRITERIA_TYPE_EARN_HONORABLE_KILL);
 
         return true;
@@ -105,18 +106,18 @@ public:
             player->SetShapeshiftForm(FORM_NONE);
 
         player->setFactionForRace(player->getRace());
-        player->SetPowerType(Powers(powerType));
+        player->SetUInt32Value(UNIT_FIELD_DISPLAY_POWER, powerType);
 
         // reset only if player not in some form;
         if (player->GetShapeshiftForm() == FORM_NONE)
             player->InitDisplayIds();
 
-        player->SetPvpFlags(UNIT_BYTE2_FLAG_PVP);
+        player->SetByteValue(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PVP_FLAG, UNIT_BYTE2_FLAG_PVP);
 
-        player->SetUnitFlags(UNIT_FLAG_PVP_ATTACKABLE);
+        player->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
 
         //-1 is default value
-        player->SetWatchedFactionIndex(-1);
+        player->SetUInt32Value(ACTIVE_PLAYER_FIELD_WATCHED_FACTION_INDEX, uint32(-1));
         return true;
     }
 
@@ -140,7 +141,7 @@ public:
         target->InitStatsForLevel(true);
         target->InitTaxiNodesForLevel();
         target->InitTalentForLevel();
-        target->SetXP(0);
+        target->SetUInt32Value(ACTIVE_PLAYER_FIELD_XP, 0);
 
         target->_ApplyAllLevelScaleItemMods(true);
 

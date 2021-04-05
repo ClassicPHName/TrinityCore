@@ -244,7 +244,7 @@ class boss_mandokir : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_SUMMON_OHGAN:
-                            me->SetMountDisplayId(0);
+                            me->SetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID, 0);
                             DoCast(me, SPELL_SUMMON_OHGAN, true);
                             break;
                         case EVENT_DECAPITATE:

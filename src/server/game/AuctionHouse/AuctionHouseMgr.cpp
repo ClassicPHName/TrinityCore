@@ -1496,7 +1496,41 @@ void AuctionHouseObject::BuildListAuctionItems(WorldPackets::AuctionHouse::Aucti
             if (name.empty())
                 continue;
 
-            // TODO: Generate name using ItemNameDescription
+            // DO NOT use GetItemEnchantMod(proto->RandomProperty) as it may return a result
+            //  that matches the search but it may not equal item->GetItemRandomPropertyId()
+            //  used in BuildAuctionInfo() which then causes wrong items to be listed
+            int32 propRefID = item->GetItemRandomPropertyId();
+
+            if (propRefID)
+            {
+                // Append the suffix to the name (ie: of the Monkey) if one exists
+                // These are found in ItemRandomSuffix.dbc and ItemRandomProperties.dbc
+                //  even though the DBC names seem misleading
+
+                const char* suffix = nullptr;
+
+                if (propRefID < 0)
+                {
+                    const ItemRandomSuffixEntry* itemRandSuffix = sItemRandomSuffixStore.LookupEntry(-propRefID);
+                    if (itemRandSuffix)
+                        suffix = itemRandSuffix->Name->Str[player->GetSession()->GetSessionDbcLocale()];
+                }
+                else
+                {
+                    const ItemRandomPropertiesEntry* itemRandProp = sItemRandomPropertiesStore.LookupEntry(propRefID);
+                    if (itemRandProp)
+                        suffix = itemRandProp->Name->Str[player->GetSession()->GetSessionDbcLocale()];
+                }
+
+                // dbc local name
+                if (suffix)
+                {
+                    // Append the suffix (ie: of the Monkey) to the name using localization
+                    // or default enUS if localization is invalid
+                    name += ' ';
+                    name += suffix;
+                }
+            }
 
             // Perform the search (with or without suffix)
             if (!Utf8FitTo(name, searchedname))

@@ -72,7 +72,7 @@ public:
         {
             Initialize();
 
-            me->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
+            me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
             me->SetFaction(FACTION_FRIENDLY);
 
             Talk(SAY_SUMMON);
@@ -95,7 +95,7 @@ public:
             if (HealthBelowPct(30))
             {
                 me->SetFaction(FACTION_FRIENDLY);
-                me->AddNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
+                me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
                 me->RemoveAllAuras();
                 me->GetThreatManager().ClearAllThreat();
                 me->CombatStop(true);
@@ -680,7 +680,7 @@ public:
             Initialize();
 
             playerGUID.Clear();
-            me->RemoveUnitFlag(UNIT_FLAG_PACIFIED);
+            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
         }
 
         bool GossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
@@ -712,7 +712,7 @@ public:
                 me->GetMotionMaster()->MovePoint(0, exorcismPos[1]);
                 Talk(SAY_BARADA_2);
 
-                me->AddUnitFlag(UNIT_FLAG_PACIFIED);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
             }
         }
 
@@ -892,7 +892,7 @@ public:
                                 }
 
                                 me->RemoveAura(SPELL_BARADAS_COMMAND);
-                                me->RemoveUnitFlag(UNIT_FLAG_PACIFIED);
+                                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
 
                                 Talk(SAY_BARADA_8);
                                 me->GetMotionMaster()->MoveTargetedHome();
@@ -948,7 +948,7 @@ public:
         {
             me->Dismount();
             me->SetFacingToObject(player);
-            me->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+            me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
             _playerGUID = player->GetGUID();
             _events.ScheduleEvent(EVENT_TALK, Seconds(2));
         }
@@ -956,9 +956,9 @@ public:
         void Reset() override
         {
             me->RestoreFaction();
-            me->RemoveNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
-            me->AddNpcFlag(UNIT_NPC_FLAG_GOSSIP);
-            me->SetImmuneToPC(true);
+            me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+            me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
         }
 
         void DamageTaken(Unit* /*attacker*/, uint32 &damage) override
@@ -972,8 +972,8 @@ public:
                 me->RemoveAllAuras();
                 me->GetThreatManager().ClearAllThreat();
                 me->CombatStop(true);
-                me->AddNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
-                me->SetImmuneToPC(true);
+                me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
                 Talk(SAY_DEFEATED);
 
                 _events.ScheduleEvent(EVENT_EVADE, Minutes(1));
@@ -993,7 +993,7 @@ public:
                     _events.ScheduleEvent(EVENT_ATTACK, Seconds(2));
                     break;
                 case EVENT_ATTACK:
-                    me->SetImmuneToPC(false);
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
                     me->SetFaction(FACTION_MONSTER_2);
                     if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
                         me->EngageWithTarget(player);

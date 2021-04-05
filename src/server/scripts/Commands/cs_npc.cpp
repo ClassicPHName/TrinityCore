@@ -732,10 +732,7 @@ public:
             return false;
         }
 
-        uint32 raw[2];
-        memcpy(raw, &npcFlags, sizeof(raw));
-        creature->SetNpcFlags(NPCFlags(raw[0]));
-        creature->SetNpcFlags2(NPCFlags2(raw[1]));
+        creature->SetUInt64Value(UNIT_NPC_FLAGS, npcFlags);
 
         WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_UPD_CREATURE_NPCFLAG);
 
@@ -815,9 +812,8 @@ public:
 
         CreatureTemplate const* cInfo = target->GetCreatureTemplate();
 
-        uint32 faction = target->GetFaction();
-        uint64 npcflags;
-        memcpy(&npcflags, target->m_unitData->NpcFlags.begin(), sizeof(npcflags));
+        uint32 faction = target->getFaction();
+        uint64 npcflags = target->GetUInt64Value(UNIT_NPC_FLAGS);
         uint32 mechanicImmuneMask = cInfo->MechanicImmuneMask;
         uint32 displayid = target->GetDisplayId();
         uint32 nativeid = target->GetNativeDisplayId();
@@ -842,22 +838,22 @@ public:
         handler->PSendSysMessage(LANG_NPCINFO_HEALTH, target->GetCreateHealth(), std::to_string(target->GetMaxHealth()).c_str(), std::to_string(target->GetHealth()).c_str());
         handler->PSendSysMessage(LANG_NPCINFO_INHABIT_TYPE, cInfo->InhabitType);
 
-        handler->PSendSysMessage(LANG_NPCINFO_UNIT_FIELD_FLAGS, *target->m_unitData->Flags);
+        handler->PSendSysMessage(LANG_NPCINFO_UNIT_FIELD_FLAGS, target->GetUInt32Value(UNIT_FIELD_FLAGS));
         for (uint8 i = 0; i < MAX_UNIT_FLAGS; ++i)
-            if (target->HasUnitFlag(unitFlags[i].Value))
+            if (target->GetUInt32Value(UNIT_FIELD_FLAGS) & unitFlags[i].Value)
                 handler->PSendSysMessage("%s (0x%X)", unitFlags[i].Name, unitFlags[i].Value);
 
-        handler->PSendSysMessage(LANG_NPCINFO_UNIT_FIELD_FLAGS_2, *target->m_unitData->Flags2);
+        handler->PSendSysMessage(LANG_NPCINFO_UNIT_FIELD_FLAGS_2, target->GetUInt32Value(UNIT_FIELD_FLAGS_2));
         for (uint8 i = 0; i < MAX_UNIT_FLAGS_2; ++i)
-            if (target->HasUnitFlag2(unitFlags2[i].Value))
+            if (target->GetUInt32Value(UNIT_FIELD_FLAGS_2) & unitFlags2[i].Value)
                 handler->PSendSysMessage("%s (0x%X)", unitFlags2[i].Name, unitFlags2[i].Value);
 
-        handler->PSendSysMessage(LANG_NPCINFO_UNIT_FIELD_FLAGS_3, *target->m_unitData->Flags3);
+        handler->PSendSysMessage(LANG_NPCINFO_UNIT_FIELD_FLAGS_3, target->GetUInt32Value(UNIT_FIELD_FLAGS_3));
         for (uint8 i = 0; i < MAX_UNIT_FLAGS_3; ++i)
-            if (target->HasUnitFlag3(unitFlags3[i].Value))
+            if (target->GetUInt32Value(UNIT_FIELD_FLAGS_3) & unitFlags3[i].Value)
                 handler->PSendSysMessage("%s (0x%X)", unitFlags3[i].Name, unitFlags3[i].Value);
 
-        handler->PSendSysMessage(LANG_NPCINFO_DYNAMIC_FLAGS, target->GetDynamicFlags());
+        handler->PSendSysMessage(LANG_NPCINFO_DYNAMIC_FLAGS, target->GetUInt32Value(OBJECT_DYNAMIC_FLAGS));
         handler->PSendSysMessage(LANG_COMMAND_RAWPAWNTIMES, defRespawnDelayStr.c_str(), curRespawnDelayStr.c_str());
         handler->PSendSysMessage(LANG_NPCINFO_LOOT,  cInfo->lootid, cInfo->pickpocketLootId, cInfo->SkinLootId);
         handler->PSendSysMessage(LANG_NPCINFO_DUNGEON_ID, target->GetInstanceId());
@@ -1011,7 +1007,7 @@ public:
             return false;
         }
 
-        target->SetEmoteState(Emote(emote));
+        target->SetUInt32Value(UNIT_NPC_EMOTESTATE, emote);
 
         return true;
     }
@@ -1551,13 +1547,13 @@ public:
         uint8 level = std::max<uint8>(player->getLevel()-5, creatureTarget->getLevel());
 
         // prepare visual effect for levelup
-        pet->SetLevel(level - 1);
+        pet->SetUInt32Value(UNIT_FIELD_LEVEL, level - 1);
 
         // add to world
         pet->GetMap()->AddToMap(pet->ToCreature());
 
         // visual effect for levelup
-        pet->SetLevel(level);
+        pet->SetUInt32Value(UNIT_FIELD_LEVEL, level);
 
         // caster have pet now
         player->SetMinion(pet, true);

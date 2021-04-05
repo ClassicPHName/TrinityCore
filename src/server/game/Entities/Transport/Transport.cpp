@@ -89,7 +89,7 @@ bool Transport::Create(ObjectGuid::LowType guidlow, uint32 entry, uint32 mapid, 
     if (m_goTemplateAddon)
     {
         SetFaction(m_goTemplateAddon->faction);
-        SetFlags(GameObjectFlags(m_goTemplateAddon->flags));
+        SetUInt32Value(GAMEOBJECT_FLAGS, m_goTemplateAddon->flags);
     }
 
     m_goValue.Transport.PathProgress = 0;
@@ -470,7 +470,7 @@ TempSummon* Transport::SummonPassenger(uint32 entry, Position const& pos, TempSu
 
     PhasingHandler::InheritPhaseShift(summon, summoner ? static_cast<WorldObject*>(summoner) : static_cast<WorldObject*>(this));
 
-    summon->SetCreatedBySpell(spellId);
+    summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, spellId);
 
     summon->SetTransport(this);
     summon->m_movementInfo.transport.guid = GetGUID();

@@ -4030,10 +4030,10 @@ std::vector<SpellPowerCost> SpellInfo::CalcPowerCost(Unit const* caster, SpellSc
 
 inline float CalcPPMHasteMod(SpellProcsPerMinuteModEntry const* mod, Unit* caster)
 {
-    float haste = caster->m_unitData->ModHaste;
-    float rangedHaste = caster->m_unitData->ModRangedHaste;
-    float spellHaste = caster->m_unitData->ModSpellHaste;
-    float regenHaste = caster->m_unitData->ModHasteRegen;
+    float haste = caster->GetFloatValue(UNIT_FIELD_MOD_HASTE);
+    float rangedHaste = caster->GetFloatValue(UNIT_FIELD_MOD_RANGED_HASTE);
+    float spellHaste = caster->GetFloatValue(UNIT_MOD_CAST_HASTE);
+    float regenHaste = caster->GetFloatValue(UNIT_FIELD_MOD_HASTE_REGEN);
 
     switch (mod->Param)
     {
@@ -4056,13 +4056,12 @@ inline float CalcPPMHasteMod(SpellProcsPerMinuteModEntry const* mod, Unit* caste
 
 inline float CalcPPMCritMod(SpellProcsPerMinuteModEntry const* mod, Unit* caster)
 {
-    Player const* player = caster->ToPlayer();
-    if (!player)
+    if (caster->GetTypeId() != TYPEID_PLAYER)
         return 0.0f;
 
-    float crit = player->m_activePlayerData->CritPercentage;
-    float rangedCrit = player->m_activePlayerData->RangedCritPercentage;
-    float spellCrit = player->m_activePlayerData->SpellCritPercentage;
+    float crit = caster->GetFloatValue(ACTIVE_PLAYER_FIELD_CRIT_PERCENTAGE);
+    float rangedCrit = caster->GetFloatValue(ACTIVE_PLAYER_FIELD_RANGED_CRIT_PERCENTAGE);
+    float spellCrit = caster->GetFloatValue(ACTIVE_PLAYER_FIELD_SPELL_CRIT_PERCENTAGE1);
 
     switch (mod->Param)
     {
@@ -4123,7 +4122,7 @@ float SpellInfo::CalcProcPPM(Unit* caster, int32 itemLevel) const
             case SPELL_PPM_MOD_SPEC:
             {
                 if (Player* plrCaster = caster->ToPlayer())
-                    if (plrCaster->GetPrimarySpecialization() == uint32(mod->Param))
+                    if (plrCaster->GetInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID) == mod->Param)
                         ppm *= 1.0f + mod->Coeff;
                 break;
             }

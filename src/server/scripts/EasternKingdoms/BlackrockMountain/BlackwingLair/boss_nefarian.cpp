@@ -189,7 +189,7 @@ public:
                     _Reset();
 
                 me->SetVisible(true);
-                me->SetNpcFlags(UNIT_NPC_FLAG_GOSSIP);
+                me->SetUInt32Value(UNIT_NPC_FLAGS, 1);
                 me->SetFaction(FACTION_FRIENDLY);
                 me->SetStandState(UNIT_STAND_STATE_SIT_HIGH_CHAIR);
                 me->RemoveAura(SPELL_NEFARIANS_BARRIER);
@@ -208,10 +208,10 @@ public:
             Talk(SAY_GAMESBEGIN_2);
 
             me->SetFaction(FACTION_DRAGONFLIGHT_BLACK);
-            me->SetNpcFlags(UNIT_NPC_FLAG_NONE);
+            me->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
             DoCast(me, SPELL_NEFARIANS_BARRIER);
             me->SetStandState(UNIT_STAND_STATE_STAND);
-            me->SetImmuneToPC(false);
+            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
             AttackStart(target);
             events.ScheduleEvent(EVENT_SHADOW_BOLT, urand(3000, 10000));
             events.ScheduleEvent(EVENT_FEAR, urand(10000, 20000));
@@ -224,7 +224,7 @@ public:
             if (summon->GetEntry() != NPC_NEFARIAN)
             {
                 summon->UpdateEntry(NPC_BONE_CONSTRUCT);
-                summon->AddUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
+                summon->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                 summon->SetReactState(REACT_PASSIVE);
                 summon->SetStandState(UNIT_STAND_STATE_DEAD);
             }
@@ -575,7 +575,7 @@ public:
                     {
                         (*itr)->Respawn();
                         (*itr)->SetInCombatWithZone();
-                        (*itr)->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
+                        (*itr)->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                         (*itr)->SetReactState(REACT_AGGRESSIVE);
                         (*itr)->SetStandState(UNIT_STAND_STATE_STAND);
                     }

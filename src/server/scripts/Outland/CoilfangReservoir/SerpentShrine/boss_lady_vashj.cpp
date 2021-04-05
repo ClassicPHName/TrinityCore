@@ -151,7 +151,7 @@ public:
             Intro = false;
             JustCreated = true;
             CanAttack = false;
-            creature->AddUnitFlag(UNIT_FLAG_NON_ATTACKABLE); // set it only once on Creature create (no need do intro if wiped)
+            creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE); // set it only once on Creature create (no need do intro if wiped)
         }
 
         void Initialize()
@@ -321,7 +321,7 @@ public:
                 if (AggroTimer <= diff)
                 {
                     CanAttack = true;
-                    me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                     AggroTimer=19000;
                 }
                 else
@@ -849,7 +849,7 @@ public:
             Initialize();
             me->SetDisplayId(11686); // invisible
 
-            me->AddUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
         }
 
         void MoveInLineOfSight(Unit* /*who*/) override { }

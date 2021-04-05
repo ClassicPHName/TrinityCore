@@ -1136,9 +1136,9 @@ void Map::PlayerRelocation(Player* player, float x, float y, float z, float orie
 
     //! If hovering, always increase our server-side Z position
     //! Client automatically projects correct position based on Z coord sent in monster move
-    //! and HoverHeight sent in object updates
+    //! and UNIT_FIELD_HOVERHEIGHT sent in object updates
     if (player->HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
-        z += player->m_unitData->HoverHeight;
+        z += player->GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
 
     player->Relocate(x, y, z, orientation);
     if (player->IsVehicle())
@@ -1172,9 +1172,9 @@ void Map::CreatureRelocation(Creature* creature, float x, float y, float z, floa
 
     //! If hovering, always increase our server-side Z position
     //! Client automatically projects correct position based on Z coord sent in monster move
-    //! and HoverHeight sent in object updates
+    //! and UNIT_FIELD_HOVERHEIGHT sent in object updates
     if (creature->HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
-        z += creature->m_unitData->HoverHeight;
+        z += creature->GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
 
     // delay creature move for grid/cell to grid/cell moves
     if (old_cell.DiffCell(new_cell) || old_cell.DiffGrid(new_cell))
@@ -4894,21 +4894,23 @@ Corpse* Map::ConvertCorpseToBones(ObjectGuid const& ownerGuid, bool insignia /*=
         bones = new Corpse();
         bones->Create(corpse->GetGUID().GetCounter(), this);
 
-        bones->SetCorpseDynamicFlags(CorpseDynFlags(*corpse->m_corpseData->DynamicFlags));
-        bones->SetOwnerGUID(corpse->m_corpseData->Owner);
-        bones->SetPartyGUID(corpse->m_corpseData->PartyGUID);
-        bones->SetGuildGUID(corpse->m_corpseData->GuildGUID);
-        bones->SetDisplayId(corpse->m_corpseData->DisplayID);
-        bones->SetRace(corpse->m_corpseData->RaceID);
-        bones->SetSex(corpse->m_corpseData->Sex);
-        bones->SetCustomizations(Trinity::Containers::MakeIteratorPair(corpse->m_corpseData->Customizations.begin(), corpse->m_corpseData->Customizations.end()));
-        bones->SetFlags(corpse->m_corpseData->Flags | CORPSE_FLAG_BONES);
-        bones->SetFactionTemplate(corpse->m_corpseData->FactionTemplate);
-        for (uint32 i = 0; i < EQUIPMENT_SLOT_END; ++i)
-            bones->SetItem(i, corpse->m_corpseData->Items[i]);
+        //bones->SetCorpseDynamicFlags(CorpseDynFlags(*corpse->m_corpseData->DynamicFlags));
+        //bones->SetOwnerGUID(corpse->m_corpseData->Owner);
+        //bones->SetPartyGUID(corpse->m_corpseData->PartyGUID);
+        //bones->SetGuildGUID(corpse->m_corpseData->GuildGUID);
+        //bones->SetDisplayId(corpse->m_corpseData->DisplayID);
+        //bones->SetRace(corpse->m_corpseData->RaceID);
+        //bones->SetSex(corpse->m_corpseData->Sex);
+        //bones->SetCustomizations(Trinity::Containers::MakeIteratorPair(corpse->m_corpseData->Customizations.begin(), corpse->m_corpseData->Customizations.end()));
+        //bones->SetFlags(corpse->m_corpseData->Flags | CORPSE_FLAG_BONES);
+        //bones->SetFactionTemplate(corpse->m_corpseData->FactionTemplate);
+        //for (uint32 i = 0; i < EQUIPMENT_SLOT_END; ++i)
+        //    bones->SetItem(i, corpse->m_corpseData->Items[i]);
 
         bones->SetCellCoord(corpse->GetCellCoord());
         bones->Relocate(corpse->GetPositionX(), corpse->GetPositionY(), corpse->GetPositionZ(), corpse->GetOrientation());
+
+        bones->SetUInt32Value(CORPSE_FIELD_FLAGS, corpse->GetUInt32Value(CORPSE_FIELD_FLAGS) | CORPSE_FLAG_BONES);
 
         PhasingHandler::InheritPhaseShift(bones, corpse);
 

@@ -106,8 +106,8 @@ void EscortAI::EnterEvadeMode(EvadeReason /*why*/)
     else
     {
         me->GetMotionMaster()->MoveTargetedHome();
-        if (_hasImmuneToNPCFlags)
-            me->SetImmuneToNPC(true);
+        if (HasImmuneToNPCFlags)
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
         Reset();
     }
 }
@@ -329,13 +329,13 @@ void EscortAI::Start(bool isActiveAttacker /* = true*/, bool run /* = false */, 
     me->GetMotionMaster()->MoveIdle();
     me->GetMotionMaster()->Clear(MOTION_SLOT_ACTIVE);
 
-    // disable npcflags
-    me->SetNpcFlags(UNIT_NPC_FLAG_NONE);
-    me->SetNpcFlags2(UNIT_NPC_FLAG_2_NONE);
-    if (me->IsImmuneToNPC())
+    
+    //disable npcflags
+    me->SetUInt64Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+    if (me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC))
     {
         _hasImmuneToNPCFlags = true;
-        me->SetImmuneToNPC(false);
+        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
     }
 
     TC_LOG_DEBUG("scripts", "EscortAI::Start: (script: %s, creature entry: %u) started with %u waypoints. ActiveAttacker = %d, Run = %d, Player = %s", me->GetScriptName().c_str(), me->GetEntry(), uint32(_path.nodes.size()), _activeAttacker, _running, _playerGUID.ToString().c_str());

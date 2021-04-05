@@ -671,7 +671,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             {
                 if (IsUnit(target))
                 {
-                    target->ToUnit()->SetEmoteState(Emote(e.action.emote.emote));
+                    (*itr)->ToUnit()->SetUInt32Value(UNIT_NPC_EMOTESTATE, e.action.emote.emote);
                     TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction:: SMART_ACTION_SET_EMOTE_STATE. %s set emotestate to %u",
                         target->GetGUID().ToString().c_str(), e.action.emote.emote);
                 }
@@ -686,13 +686,13 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                 {
                     if (!e.action.unitFlag.type)
                     {
-                        target->ToUnit()->AddUnitFlag(UnitFlags(e.action.unitFlag.flag));
+                        (*itr)->ToUnit()->SetFlag(UNIT_FIELD_FLAGS, e.action.unitFlag.flag);
                         TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction:: SMART_ACTION_SET_UNIT_FLAG. %s added flag %u to UNIT_FIELD_FLAGS",
                             target->GetGUID().ToString().c_str(), e.action.unitFlag.flag);
                     }
                     else
                     {
-                        target->ToUnit()->AddUnitFlag2(UnitFlags2(e.action.unitFlag.flag));
+                        (*itr)->ToUnit()->SetFlag(UNIT_FIELD_FLAGS_2, e.action.unitFlag.flag);
                         TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction:: SMART_ACTION_SET_UNIT_FLAG. %s added flag %u to UNIT_FIELD_FLAGS_2",
                             target->GetGUID().ToString().c_str(), e.action.unitFlag.flag);
                     }
@@ -708,13 +708,13 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                 {
                     if (!e.action.unitFlag.type)
                     {
-                        target->ToUnit()->RemoveUnitFlag(UnitFlags(e.action.unitFlag.flag));
+                        (*itr)->ToUnit()->RemoveFlag(UNIT_FIELD_FLAGS, e.action.unitFlag.flag);
                         TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction:: SMART_ACTION_REMOVE_UNIT_FLAG. %s removed flag %u to UNIT_FIELD_FLAGS",
                             target->GetGUID().ToString().c_str(), e.action.unitFlag.flag);
                     }
                     else
                     {
-                        target->ToUnit()->RemoveUnitFlag2(UnitFlags2(e.action.unitFlag.flag));
+                        (*itr)->ToUnit()->RemoveFlag(UNIT_FIELD_FLAGS_2, e.action.unitFlag.flag);
                         TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction:: SMART_ACTION_REMOVE_UNIT_FLAG. %s removed flag %u to UNIT_FIELD_FLAGS_2",
                             target->GetGUID().ToString().c_str(), e.action.unitFlag.flag);
                     }
@@ -1636,21 +1636,21 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         {
             for (WorldObject* target : targets)
                 if (IsCreature(target))
-                    target->ToUnit()->SetNpcFlags(NPCFlags(e.action.unitFlag.flag));
+                    target->ToUnit()->SetUInt64Value(UNIT_NPC_FLAGS, e.action.unitFlag.flag);
             break;
         }
         case SMART_ACTION_ADD_NPC_FLAG:
         {
             for (WorldObject* target : targets)
                 if (IsCreature(target))
-                    target->ToUnit()->AddNpcFlag(NPCFlags(e.action.unitFlag.flag));
+                    target->ToUnit()->SetFlag64(UNIT_NPC_FLAGS, e.action.unitFlag.flag);
             break;
         }
         case SMART_ACTION_REMOVE_NPC_FLAG:
         {
             for (WorldObject* target : targets)
                 if (IsCreature(target))
-                    target->ToUnit()->RemoveNpcFlag(NPCFlags(e.action.unitFlag.flag));
+                    target->ToUnit()->RemoveFlag64(UNIT_NPC_FLAGS, e.action.unitFlag.flag);
             break;
         }
         case SMART_ACTION_CROSS_CAST:
@@ -1786,48 +1786,14 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         {
             for (WorldObject* target : targets)
                 if (IsUnit(target))
-                {
-                    switch (e.action.setunitByte.type)
-                    {
-                        case 0:
-                            target->ToUnit()->SetStandState(UnitStandStateType(e.action.setunitByte.byte1));
-                            break;
-                        case 1:
-                            // pet talent points
-                            break;
-                        case 2:
-                            target->ToUnit()->AddVisFlags(UnitVisFlags(e.action.setunitByte.byte1));
-                            break;
-                        case 3:
-                            // this is totally wrong to maintain compatibility with existing scripts
-                            // TODO: fix with animtier overhaul
-                            target->ToUnit()->SetAnimTier(UnitBytes1_Flags(target->ToUnit()->m_unitData->AnimTier | e.action.setunitByte.byte1), false);
-                            break;
-                    }
-                }
+                    target->ToUnit()->SetByteFlag(UNIT_FIELD_BYTES_1, e.action.setunitByte.type, e.action.setunitByte.byte1);
             break;
         }
         case SMART_ACTION_REMOVE_UNIT_FIELD_BYTES_1:
         {
             for (WorldObject* target : targets)
                 if (IsUnit(target))
-                {
-                    switch (e.action.setunitByte.type)
-                    {
-                        case 0:
-                            target->ToUnit()->SetStandState(UNIT_STAND_STATE_STAND);
-                            break;
-                        case 1:
-                            // pet talent points
-                            break;
-                        case 2:
-                            target->ToUnit()->RemoveVisFlags(UnitVisFlags(e.action.setunitByte.byte1));
-                            break;
-                        case 3:
-                            target->ToUnit()->SetAnimTier(UnitBytes1_Flags(target->ToUnit()->m_unitData->AnimTier & ~e.action.setunitByte.byte1), false);
-                            break;
-                    }
-                }
+                    target->ToUnit()->RemoveByteFlag(UNIT_FIELD_BYTES_1, e.action.delunitByte.type, e.action.delunitByte.byte1);
             break;
         }
         case SMART_ACTION_INTERRUPT_SPELL:
@@ -1847,22 +1813,19 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         case SMART_ACTION_SET_DYNAMIC_FLAG:
         {
             for (WorldObject* target : targets)
-                target->SetDynamicFlags(e.action.unitFlag.flag);
-
+                target->ToUnit()->SetUInt32Value(OBJECT_DYNAMIC_FLAGS, e.action.unitFlag.flag);
             break;
         }
         case SMART_ACTION_ADD_DYNAMIC_FLAG:
         {
             for (WorldObject* target : targets)
-                target->AddDynamicFlag(e.action.unitFlag.flag);
-
+                target->ToUnit()->SetFlag(OBJECT_DYNAMIC_FLAGS, e.action.unitFlag.flag);
             break;
         }
         case SMART_ACTION_REMOVE_DYNAMIC_FLAG:
         {
             for (WorldObject* target : targets)
-                target->RemoveDynamicFlag(e.action.unitFlag.flag);
-
+                target->ToUnit()->RemoveFlag(OBJECT_DYNAMIC_FLAGS, e.action.unitFlag.flag);
             break;
         }
         case SMART_ACTION_JUMP_TO_POS:
@@ -1989,22 +1952,21 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         {
             for (WorldObject* target : targets)
                 if (IsGameObject(target))
-                    target->ToGameObject()->SetFlags(GameObjectFlags(e.action.goFlag.flag));
-
+                    target->ToGameObject()->SetUInt32Value(GAMEOBJECT_FLAGS, e.action.goFlag.flag);
             break;
         }
         case SMART_ACTION_ADD_GO_FLAG:
         {
             for (WorldObject* target : targets)
                 if (IsGameObject(target))
-                    target->ToGameObject()->AddFlag(GameObjectFlags(e.action.goFlag.flag));
+                    target->ToGameObject()->SetFlag(GAMEOBJECT_FLAGS, e.action.goFlag.flag);
             break;
         }
         case SMART_ACTION_REMOVE_GO_FLAG:
         {
             for (WorldObject* target : targets)
                 if (IsGameObject(target))
-                    target->ToGameObject()->RemoveFlag(GameObjectFlags(e.action.goFlag.flag));
+                    target->ToGameObject()->RemoveFlag(GAMEOBJECT_FLAGS, e.action.goFlag.flag);
             break;
         }
         case SMART_ACTION_SUMMON_CREATURE_GROUP:

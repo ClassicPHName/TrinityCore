@@ -41,9 +41,10 @@ class go_main_chambers_access_panel : public GameObjectScript
 
                 if (me->GetEntry() == GO_ACCESS_PANEL_MEK && (instance->GetBossState(DATA_MEKGINEER_STEAMRIGGER) == DONE || instance->GetBossState(DATA_MEKGINEER_STEAMRIGGER) == SPECIAL))
                     instance->SetBossState(DATA_MEKGINEER_STEAMRIGGER, SPECIAL);
-
-                me->AddFlag(GO_FLAG_NOT_SELECTABLE);
+                    
+                me->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
                 me->SetGoState(GO_STATE_ACTIVE);
+
                 return true;
             }
         };
@@ -148,7 +149,7 @@ class instance_steam_vault : public InstanceMapScript
                     case DATA_HYDROMANCER_THESPIA:
                         if (state == DONE)
                             if (GameObject* panel = GetGameObject(DATA_ACCESS_PANEL_HYDRO))
-                                panel->RemoveFlag(GO_FLAG_NOT_SELECTABLE);
+                                panel->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
                         if (state == SPECIAL)
                         {
                             if (GetBossState(DATA_MEKGINEER_STEAMRIGGER) == SPECIAL)
@@ -160,7 +161,7 @@ class instance_steam_vault : public InstanceMapScript
                     case DATA_MEKGINEER_STEAMRIGGER:
                         if (state == DONE)
                             if (GameObject* panel = GetGameObject(DATA_ACCESS_PANEL_MEK))
-                                panel->RemoveFlag(GO_FLAG_NOT_SELECTABLE);
+                                panel->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
                         if (state == SPECIAL)
                         {
                             if (GetBossState(DATA_HYDROMANCER_THESPIA) == SPECIAL)

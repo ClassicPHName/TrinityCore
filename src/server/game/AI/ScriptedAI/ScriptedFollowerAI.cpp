@@ -299,8 +299,7 @@ void FollowerAI::StartFollow(Player* player, uint32 factionForFollower, Quest co
         TC_LOG_DEBUG("scripts", "FollowerAI start with WAYPOINT_MOTION_TYPE, set to MoveIdle.");
     }
 
-    me->SetNpcFlags(UNIT_NPC_FLAG_NONE);
-    me->SetNpcFlags2(UNIT_NPC_FLAG_2_NONE);
+    me->SetUInt64Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
 
     AddFollowState(STATE_FOLLOW_INPROGRESS);
 

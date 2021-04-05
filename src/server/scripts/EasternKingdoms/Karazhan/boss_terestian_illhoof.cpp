@@ -297,7 +297,6 @@ public:
 
             me->ApplySpellImmune(0, IMMUNITY_SCHOOL, SPELL_SCHOOL_MASK_FIRE, true);
         }
-
         void UpdateAI(uint32 diff) override
         {
             if (!UpdateVictim())

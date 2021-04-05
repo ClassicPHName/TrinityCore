@@ -41,17 +41,17 @@ void WorldSession::HandleArtifactAddPower(WorldPackets::Artifact::ArtifactAddPow
     if (GtArtifactLevelXPEntry const* cost = sArtifactLevelXPGameTable.GetRow(artifact->GetTotalPurchasedArtifactPowers() + 1))
         xpCost = uint64(currentArtifactTier == MAX_ARTIFACT_TIER ? cost->XP2 : cost->XP);
 
-    if (xpCost > artifact->m_itemData->ArtifactXP)
+    if (xpCost > artifact->GetUInt64Value(ITEM_FIELD_ARTIFACT_XP))
         return;
 
     if (artifactAddPower.PowerChoices.empty())
         return;
 
-    UF::ArtifactPower const* artifactPower = artifact->GetArtifactPower(artifactAddPower.PowerChoices[0].ArtifactPowerID);
+    ItemDynamicFieldArtifactPowers const* artifactPower = artifact->GetArtifactPower(artifactAddPower.PowerChoices[0].ArtifactPowerID);
     if (!artifactPower)
         return;
 
-    ArtifactPowerEntry const* artifactPowerEntry = sArtifactPowerStore.LookupEntry(artifactPower->ArtifactPowerID);
+    ArtifactPowerEntry const* artifactPowerEntry = sArtifactPowerStore.LookupEntry(artifactPower->ArtifactPowerId);
     if (!artifactPowerEntry)
         return;
 
@@ -73,7 +73,7 @@ void WorldSession::HandleArtifactAddPower(WorldPackets::Artifact::ArtifactAddPow
 
     if (!(artifactPowerEntry->Flags & ARTIFACT_POWER_FLAG_NO_LINK_REQUIRED))
     {
-        if (std::unordered_set<uint32> const* artifactPowerLinks = sDB2Manager.GetArtifactPowerLinks(artifactPower->ArtifactPowerID))
+        if (std::unordered_set<uint32> const* artifactPowerLinks = sDB2Manager.GetArtifactPowerLinks(artifactPower->ArtifactPowerId))
         {
             bool hasAnyLink = false;
             for (uint32 artifactPowerLinkId : *artifactPowerLinks)
@@ -82,7 +82,7 @@ void WorldSession::HandleArtifactAddPower(WorldPackets::Artifact::ArtifactAddPow
                 if (!artifactPowerLink)
                     continue;
 
-                UF::ArtifactPower const* artifactPowerLinkLearned = artifact->GetArtifactPower(artifactPowerLinkId);
+                ItemDynamicFieldArtifactPowers const* artifactPowerLinkLearned = artifact->GetArtifactPower(artifactPowerLinkId);
                 if (!artifactPowerLinkLearned)
                     continue;
 
@@ -98,19 +98,22 @@ void WorldSession::HandleArtifactAddPower(WorldPackets::Artifact::ArtifactAddPow
         }
     }
 
-    ArtifactPowerRankEntry const* artifactPowerRank = sDB2Manager.GetArtifactPowerRank(artifactPower->ArtifactPowerID, artifactPower->CurrentRankWithBonus + 1 - 1); // need data for next rank, but -1 because of how db2 data is structured
+    ArtifactPowerRankEntry const* artifactPowerRank = sDB2Manager.GetArtifactPowerRank(artifactPower->ArtifactPowerId, artifactPower->CurrentRankWithBonus + 1 - 1); // need data for next rank, but -1 because of how db2 data is structured
     if (!artifactPowerRank)
         return;
 
-    artifact->SetArtifactPower(artifactPower->ArtifactPowerID, artifactPower->PurchasedRank + 1, artifactPower->CurrentRankWithBonus + 1);
+    ItemDynamicFieldArtifactPowers newPower = *artifactPower;
+    ++newPower.PurchasedRank;
+    ++newPower.CurrentRankWithBonus;
+    artifact->SetArtifactPower(&newPower);
 
     if (artifact->IsEquipped())
     {
         _player->ApplyArtifactPowerRank(artifact, artifactPowerRank, true);
 
-        for (UF::ArtifactPower const& power : artifact->m_itemData->ArtifactPowers)
+        for (ItemDynamicFieldArtifactPowers const& power : artifact->GetArtifactPowers())
         {
-            ArtifactPowerEntry const* scaledArtifactPowerEntry = sArtifactPowerStore.AssertEntry(power.ArtifactPowerID);
+            ArtifactPowerEntry const* scaledArtifactPowerEntry = sArtifactPowerStore.AssertEntry(power.ArtifactPowerId);
             if (!(scaledArtifactPowerEntry->Flags & ARTIFACT_POWER_FLAG_SCALES_WITH_NUM_POWERS))
                 continue;
 
@@ -118,14 +121,16 @@ void WorldSession::HandleArtifactAddPower(WorldPackets::Artifact::ArtifactAddPow
             if (!scaledArtifactPowerRank)
                 continue;
 
-            artifact->SetArtifactPower(power.ArtifactPowerID, power.PurchasedRank, power.CurrentRankWithBonus + 1);
+            ItemDynamicFieldArtifactPowers newScaledPower = power;
+            ++newScaledPower.CurrentRankWithBonus;
+            artifact->SetArtifactPower(&newScaledPower);
 
             _player->ApplyArtifactPowerRank(artifact, scaledArtifactPowerRank, false);
             _player->ApplyArtifactPowerRank(artifact, scaledArtifactPowerRank, true);
         }
     }
 
-    artifact->SetArtifactXP(artifact->m_itemData->ArtifactXP - xpCost);
+    artifact->SetUInt64Value(ITEM_FIELD_ARTIFACT_XP, artifact->GetUInt64Value(ITEM_FIELD_ARTIFACT_XP) - xpCost);
     artifact->SetState(ITEM_CHANGED, _player);
 
     uint32 totalPurchasedArtifactPower = artifact->GetTotalPurchasedArtifactPowers();
@@ -200,7 +205,7 @@ void WorldSession::HandleArtifactSetAppearance(WorldPackets::Artifact::ArtifactS
 
 void WorldSession::HandleConfirmArtifactRespec(WorldPackets::Artifact::ConfirmArtifactRespec& confirmArtifactRespec)
 {
-    if (!_player->GetNPCIfCanInteractWith(confirmArtifactRespec.NpcGUID, UNIT_NPC_FLAG_ARTIFACT_POWER_RESPEC, UNIT_NPC_FLAG_2_NONE))
+    if (!_player->GetNPCIfCanInteractWith(confirmArtifactRespec.NpcGUID, UNIT_NPC_FLAG_ARTIFACT_POWER_RESPEC))
         return;
 
     Item* artifact = _player->GetItemByGuid(confirmArtifactRespec.ArtifactGUID);
@@ -211,30 +216,33 @@ void WorldSession::HandleConfirmArtifactRespec(WorldPackets::Artifact::ConfirmAr
     if (GtArtifactLevelXPEntry const* cost = sArtifactLevelXPGameTable.GetRow(artifact->GetTotalPurchasedArtifactPowers() + 1))
         xpCost = uint64(artifact->GetModifier(ITEM_MODIFIER_ARTIFACT_TIER) == 1 ? cost->XP2 : cost->XP);
 
-    if (xpCost > artifact->m_itemData->ArtifactXP)
+    if (xpCost > artifact->GetUInt64Value(ITEM_FIELD_ARTIFACT_XP))
         return;
 
-    uint64 newAmount = artifact->m_itemData->ArtifactXP - xpCost;
+    uint64 newAmount = artifact->GetUInt64Value(ITEM_FIELD_ARTIFACT_XP) - xpCost;
     for (uint32 i = 0; i <= artifact->GetTotalPurchasedArtifactPowers(); ++i)
         if (GtArtifactLevelXPEntry const* cost = sArtifactLevelXPGameTable.GetRow(i))
             newAmount += uint64(artifact->GetModifier(ITEM_MODIFIER_ARTIFACT_TIER) == 1 ? cost->XP2 : cost->XP);
 
-    for (UF::ArtifactPower const& artifactPower : artifact->m_itemData->ArtifactPowers)
+    for (ItemDynamicFieldArtifactPowers const& artifactPower : artifact->GetArtifactPowers())
     {
         uint8 oldPurchasedRank = artifactPower.PurchasedRank;
         if (!oldPurchasedRank)
             continue;
 
-        artifact->SetArtifactPower(artifactPower.ArtifactPowerID, artifactPower.PurchasedRank - oldPurchasedRank, artifactPower.CurrentRankWithBonus - oldPurchasedRank);
+        ItemDynamicFieldArtifactPowers newPower = artifactPower;
+        newPower.PurchasedRank -= oldPurchasedRank;
+        newPower.CurrentRankWithBonus -= oldPurchasedRank;
+        artifact->SetArtifactPower(&newPower);
 
         if (artifact->IsEquipped())
-            if (ArtifactPowerRankEntry const* artifactPowerRank = sDB2Manager.GetArtifactPowerRank(artifactPower.ArtifactPowerID, 0))
+            if (ArtifactPowerRankEntry const* artifactPowerRank = sDB2Manager.GetArtifactPowerRank(artifactPower.ArtifactPowerId, 0))
                 _player->ApplyArtifactPowerRank(artifact, artifactPowerRank, false);
     }
 
-    for (UF::ArtifactPower const& power : artifact->m_itemData->ArtifactPowers)
+    for (ItemDynamicFieldArtifactPowers const& power : artifact->GetArtifactPowers())
     {
-        ArtifactPowerEntry const* scaledArtifactPowerEntry = sArtifactPowerStore.AssertEntry(power.ArtifactPowerID);
+        ArtifactPowerEntry const* scaledArtifactPowerEntry = sArtifactPowerStore.AssertEntry(power.ArtifactPowerId);
         if (!(scaledArtifactPowerEntry->Flags & ARTIFACT_POWER_FLAG_SCALES_WITH_NUM_POWERS))
             continue;
 
@@ -242,11 +250,13 @@ void WorldSession::HandleConfirmArtifactRespec(WorldPackets::Artifact::ConfirmAr
         if (!scaledArtifactPowerRank)
             continue;
 
-        artifact->SetArtifactPower(power.ArtifactPowerID, power.PurchasedRank, 0);
+        ItemDynamicFieldArtifactPowers newScaledPower = power;
+        newScaledPower.CurrentRankWithBonus = 0;
+        artifact->SetArtifactPower(&newScaledPower);
 
         _player->ApplyArtifactPowerRank(artifact, scaledArtifactPowerRank, false);
     }
 
-    artifact->SetArtifactXP(newAmount);
+    artifact->SetUInt64Value(ITEM_FIELD_ARTIFACT_XP, newAmount);
     artifact->SetState(ITEM_CHANGED, _player);
 }

@@ -139,11 +139,6 @@ class TC_SHARED_API ByteBuffer
             append((uint8 *)&value, sizeof(value));
         }
 
-        bool HasUnfinishedBitPack() const
-        {
-            return _bitpos != 8;
-        }
-
         void FlushBits()
         {
             if (_bitpos == 8)

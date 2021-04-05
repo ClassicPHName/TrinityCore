@@ -156,7 +156,7 @@ public:
     {
         if (!*args)
         {
-            if (handler->GetSession()->GetPlayer()->HasPlayerFlag(PLAYER_FLAGS_DEVELOPER))
+            if (handler->GetSession()->GetPlayer()->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_DEVELOPER))
                 handler->GetSession()->SendNotification(LANG_DEV_ON);
             else
                 handler->GetSession()->SendNotification(LANG_DEV_OFF);
@@ -167,14 +167,14 @@ public:
 
         if (argstr == "on")
         {
-            handler->GetSession()->GetPlayer()->AddPlayerFlag(PLAYER_FLAGS_DEVELOPER);
+            handler->GetSession()->GetPlayer()->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_DEVELOPER);
             handler->GetSession()->SendNotification(LANG_DEV_ON);
             return true;
         }
 
         if (argstr == "off")
         {
-            handler->GetSession()->GetPlayer()->RemovePlayerFlag(PLAYER_FLAGS_DEVELOPER);
+            handler->GetSession()->GetPlayer()->RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_DEVELOPER);
             handler->GetSession()->SendNotification(LANG_DEV_OFF);
             return true;
         }
@@ -1201,7 +1201,7 @@ public:
             return false;
         }
 
-        uint32 offset = area->AreaBit / 64;
+        int32 offset = area->AreaBit / 32;
         if (offset >= PLAYER_EXPLORED_ZONES_SIZE)
         {
             handler->SendSysMessage(LANG_BAD_VALUE);
@@ -1209,8 +1209,9 @@ public:
             return false;
         }
 
-        uint64 val = UI64LIT(1) << (area->AreaBit % 64);
-        playerTarget->AddExploredZones(offset, val);
+        uint32 val = uint32((1 << (area->AreaBit % 32)));
+        uint32 currFields = playerTarget->GetUInt32Value(ACTIVE_PLAYER_FIELD_EXPLORED_ZONES + offset);
+        playerTarget->SetUInt32Value(ACTIVE_PLAYER_FIELD_EXPLORED_ZONES + offset, uint32((currFields | val)));
 
         handler->SendSysMessage(LANG_EXPLORE_AREA);
         return true;
@@ -1244,7 +1245,7 @@ public:
             return false;
         }
 
-        uint32 offset = area->AreaBit / 64;
+        int32 offset = area->AreaBit / 32;
         if (offset >= PLAYER_EXPLORED_ZONES_SIZE)
         {
             handler->SendSysMessage(LANG_BAD_VALUE);
@@ -1252,8 +1253,9 @@ public:
             return false;
         }
 
-        uint64 val = UI64LIT(1) << (area->AreaBit % 64);
-        playerTarget->RemoveExploredZones(offset, val);
+        uint32 val = uint32((1 << (area->AreaBit % 32)));
+        uint32 currFields = playerTarget->GetUInt32Value(ACTIVE_PLAYER_FIELD_EXPLORED_ZONES + offset);
+        playerTarget->SetUInt32Value(ACTIVE_PLAYER_FIELD_EXPLORED_ZONES + offset, uint32((currFields ^ val)));
 
         handler->SendSysMessage(LANG_UNEXPLORE_AREA);
         return true;
@@ -1700,7 +1702,7 @@ public:
             mapId             = target->GetMapId();
             areaId            = target->GetAreaId();
             alive             = target->IsAlive() ? handler->GetTrinityString(LANG_YES) : handler->GetTrinityString(LANG_NO);
-            gender            = target->GetNativeSex();
+            gender            = target->GetByteValue(PLAYER_BYTES_3, PLAYER_BYTES_3_OFFSET_GENDER);
         }
         // get additional information from DB
         else

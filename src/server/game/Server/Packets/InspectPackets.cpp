@@ -139,7 +139,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Inspect::PVPBracketData c
 
 WorldPackets::Inspect::InspectItemData::InspectItemData(::Item const* item, uint8 index)
 {
-    CreatorGUID = item->GetCreator();
+    CreatorGUID = item->GetGuidValue(ITEM_FIELD_CREATOR);
 
     Item.Initialize(item);
     Index = index;
@@ -150,9 +150,9 @@ WorldPackets::Inspect::InspectItemData::InspectItemData(::Item const* item, uint
             Enchants.emplace_back(enchId, i);
 
     uint8 i = 0;
-    for (UF::SocketedGem const& gemData : item->m_itemData->Gems)
+    for (ItemDynamicFieldGems const& gemData : item->GetGems())
     {
-        if (gemData.ItemID)
+        if (gemData.ItemId)
         {
             Gems.emplace_back();
 

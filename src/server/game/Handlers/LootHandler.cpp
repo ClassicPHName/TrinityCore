@@ -316,7 +316,7 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
         player->SetLootGUID(ObjectGuid::Empty);
     player->SendLootRelease(lguid);
 
-    player->RemoveUnitFlag(UNIT_FLAG_LOOTING);
+    player->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_LOOTING);
 
     if (!player->IsInWorld())
         return;
@@ -372,7 +372,7 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
         if (loot->isLooted())
         {
             loot->clear();
-            corpse->RemoveCorpseDynamicFlag(CORPSE_DYNFLAG_LOOTABLE);
+            corpse->RemoveFlag(CORPSE_FIELD_DYNAMIC_FLAGS, CORPSE_DYNFLAG_LOOTABLE);
         }
     }
     else if (lguid.IsItem())
@@ -416,7 +416,7 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
         loot = &creature->loot;
         if (loot->isLooted())
         {
-            creature->RemoveDynamicFlag(UNIT_DYNFLAG_LOOTABLE);
+            creature->RemoveFlag(OBJECT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
 
             // skip pickpocketing loot for speed, skinning timer reduction is no-op in fact
             if (!creature->IsAlive())
@@ -435,7 +435,7 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
                     group->SendLooter(creature, nullptr);
             }
             // force dynflag update to update looter and lootable info
-            creature->ForceUpdateFieldChange(creature->m_values.ModifyValue(&Object::m_objectData).ModifyValue(&UF::ObjectData::DynamicFlags));
+            creature->ForceValuesUpdateAtIndex(OBJECT_DYNAMIC_FLAGS);
         }
     }
 

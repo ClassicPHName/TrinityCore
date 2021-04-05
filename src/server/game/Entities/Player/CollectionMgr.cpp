@@ -96,14 +96,14 @@ CollectionMgr::~CollectionMgr()
 void CollectionMgr::LoadToys()
 {
     for (auto const& t : _toys)
-        _owner->GetPlayer()->AddToy(t.first, t.second.AsUnderlyingType());
+        _owner->GetPlayer()->AddDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_TOYS, t.first);
 }
 
 bool CollectionMgr::AddToy(uint32 itemId, bool isFavourite, bool hasFanfare)
 {
     if (UpdateAccountToys(itemId, isFavourite, hasFanfare))
     {
-        _owner->GetPlayer()->AddToy(itemId, GetToyFlags(isFavourite, hasFanfare).AsUnderlyingType());
+        _owner->GetPlayer()->AddDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_TOYS, itemId);
         return true;
     }
 
@@ -119,7 +119,7 @@ void CollectionMgr::LoadAccountToys(PreparedQueryResult result)
     {
         Field* fields = result->Fetch();
         uint32 itemId = fields[0].GetUInt32();
-        _toys.emplace(itemId, GetToyFlags(fields[1].GetBool(), fields[2].GetBool()));
+        _toys[itemId] = GetToyFlags(fields[1].GetBool(), fields[2].GetBool());
     } while (result->NextRow());
 }
 
@@ -231,13 +231,19 @@ uint32 CollectionMgr::GetHeirloomBonus(uint32 itemId) const
 void CollectionMgr::LoadHeirlooms()
 {
     for (auto const& item : _heirlooms)
-        _owner->GetPlayer()->AddHeirloom(item.first, item.second.flags);
+    {
+        _owner->GetPlayer()->AddDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_HEIRLOOMS, item.first);
+        _owner->GetPlayer()->AddDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_HEIRLOOM_FLAGS, item.second.flags);
+    }
 }
 
 void CollectionMgr::AddHeirloom(uint32 itemId, uint32 flags)
 {
     if (UpdateAccountHeirlooms(itemId, flags))
-        _owner->GetPlayer()->AddHeirloom(itemId, flags);
+    {
+        _owner->GetPlayer()->AddDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_HEIRLOOMS, itemId);
+        _owner->GetPlayer()->AddDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_HEIRLOOM_FLAGS, flags);
+    }
 }
 
 void CollectionMgr::UpgradeHeirloom(uint32 itemId, int32 castItem)
@@ -282,10 +288,10 @@ void CollectionMgr::UpgradeHeirloom(uint32 itemId, int32 castItem)
         item->AddBonuses(bonusId);
 
     // Get heirloom offset to update only one part of dynamic field
-    auto const& heirlooms = player->m_activePlayerData->Heirlooms;
-    uint32 offset = uint32(std::distance(heirlooms.begin(), std::find(heirlooms.begin(), heirlooms.end(), itemId)));
+    std::vector<uint32> const& fields = player->GetDynamicValues(ACTIVE_PLAYER_DYNAMIC_FIELD_HEIRLOOMS);
+    uint16 offset = uint16(std::find(fields.begin(), fields.end(), itemId) - fields.begin());
 
-    player->SetHeirloomFlags(offset, flags);
+    player->SetDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_HEIRLOOM_FLAGS, offset, flags);
     itr->second.flags = flags;
     itr->second.bonusId = bonusId;
 }
@@ -322,11 +328,11 @@ void CollectionMgr::CheckHeirloomUpgrades(Item* item)
 
         if (newItemId)
         {
-            auto const& heirlooms = player->m_activePlayerData->Heirlooms;
-            uint32 offset = uint32(std::distance(heirlooms.begin(), std::find(heirlooms.begin(), heirlooms.end(), itr->first)));
+            std::vector<uint32> const& fields = player->GetDynamicValues(ACTIVE_PLAYER_DYNAMIC_FIELD_HEIRLOOMS);
+            uint16 offset = uint16(std::find(fields.begin(), fields.end(), itr->first) - fields.begin());
 
-            player->SetHeirloom(offset, newItemId);
-            player->SetHeirloomFlags(offset, 0);
+            player->SetDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_HEIRLOOMS, offset, newItemId);
+            player->SetDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_HEIRLOOM_FLAGS, offset, 0);
 
             _heirlooms.erase(itr);
             _heirlooms[newItemId] = 0;
@@ -334,18 +340,13 @@ void CollectionMgr::CheckHeirloomUpgrades(Item* item)
             return;
         }
 
-        auto const& bonusListIDs = item->m_itemData->BonusListIDs;
+        std::vector<uint32> const& fields = item->GetDynamicValues(ITEM_DYNAMIC_FIELD_BONUSLIST_IDS);
 
-        for (uint32 bonusId : *bonusListIDs)
-        {
+        for (uint32 bonusId : fields)
             if (bonusId != itr->second.bonusId)
-            {
-                item->ClearBonuses();
-                break;
-            }
-        }
+                item->ClearDynamicValue(ITEM_DYNAMIC_FIELD_BONUSLIST_IDS);
 
-        if (std::find(bonusListIDs->begin(), bonusListIDs->end(), itr->second.bonusId) == bonusListIDs->end())
+        if (std::find(fields.begin(), fields.end(), itr->second.bonusId) == fields.end())
             item->AddBonuses(itr->second.bonusId);
     }
 }
@@ -492,14 +493,13 @@ private:
 
 void CollectionMgr::LoadItemAppearances()
 {
-    Player* owner = _owner->GetPlayer();
-    boost::to_block_range(*_appearances, DynamicBitsetBlockOutputIterator([owner](uint32 blockValue)
+    boost::to_block_range(*_appearances, DynamicBitsetBlockOutputIterator([this](uint32 blockValue)
     {
-        owner->AddTransmogBlock(blockValue);
+        _owner->GetPlayer()->AddDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_TRANSMOG, blockValue);
     }));
 
     for (auto itr = _temporaryAppearances.begin(); itr != _temporaryAppearances.end(); ++itr)
-        owner->AddConditionalTransmog(itr->first);
+        _owner->GetPlayer()->AddDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_CONDITIONAL_TRANSMOG, itr->first);
 }
 
 void CollectionMgr::LoadAccountItemAppearances(PreparedQueryResult knownAppearances, PreparedQueryResult favoriteAppearances)
@@ -624,7 +624,7 @@ void CollectionMgr::AddItemAppearance(Item* item)
     if (!CanAddAppearance(itemModifiedAppearance))
         return;
 
-    if (item->HasItemFlag(ItemFieldFlags(ITEM_FIELD_FLAG_BOP_TRADEABLE | ITEM_FIELD_FLAG_REFUNDABLE)))
+    if (item->GetUInt32Value(ITEM_FIELD_FLAGS) & (ITEM_FIELD_FLAG_BOP_TRADEABLE | ITEM_FIELD_FLAG_REFUNDABLE))
     {
         AddTemporaryAppearance(item->GetGUID(), itemModifiedAppearance);
         return;
@@ -774,24 +774,24 @@ bool CollectionMgr::CanAddAppearance(ItemModifiedAppearanceEntry const* itemModi
 
 void CollectionMgr::AddItemAppearance(ItemModifiedAppearanceEntry const* itemModifiedAppearance)
 {
-    Player* owner = _owner->GetPlayer();
     if (_appearances->size() <= itemModifiedAppearance->ID)
     {
         std::size_t numBlocks = _appearances->num_blocks();
         _appearances->resize(itemModifiedAppearance->ID + 1);
         numBlocks = _appearances->num_blocks() - numBlocks;
         while (numBlocks--)
-            owner->AddTransmogBlock(0);
+            _owner->GetPlayer()->AddDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_TRANSMOG, 0);
     }
 
     _appearances->set(itemModifiedAppearance->ID);
     uint32 blockIndex = itemModifiedAppearance->ID / 32;
     uint32 bitIndex = itemModifiedAppearance->ID % 32;
-    owner->AddTransmogFlag(blockIndex, 1 << bitIndex);
+    uint32 currentMask = _owner->GetPlayer()->GetDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_TRANSMOG, blockIndex);
+    _owner->GetPlayer()->SetDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_TRANSMOG, blockIndex, currentMask | (1 << bitIndex));
     auto temporaryAppearance = _temporaryAppearances.find(itemModifiedAppearance->ID);
     if (temporaryAppearance != _temporaryAppearances.end())
     {
-        owner->RemoveConditionalTransmog(itemModifiedAppearance->ID);
+        _owner->GetPlayer()->RemoveDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_CONDITIONAL_TRANSMOG, itemModifiedAppearance->ID);
         _temporaryAppearances.erase(temporaryAppearance);
     }
 
@@ -812,7 +812,7 @@ void CollectionMgr::AddTemporaryAppearance(ObjectGuid const& itemGuid, ItemModif
 {
     std::unordered_set<ObjectGuid>& itemsWithAppearance = _temporaryAppearances[itemModifiedAppearance->ID];
     if (itemsWithAppearance.empty())
-        _owner->GetPlayer()->AddConditionalTransmog(itemModifiedAppearance->ID);
+        _owner->GetPlayer()->AddDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_CONDITIONAL_TRANSMOG, itemModifiedAppearance->ID);
 
     itemsWithAppearance.insert(itemGuid);
 }
@@ -830,7 +830,7 @@ void CollectionMgr::RemoveTemporaryAppearance(Item* item)
     itr->second.erase(item->GetGUID());
     if (itr->second.empty())
     {
-        _owner->GetPlayer()->RemoveConditionalTransmog(itemModifiedAppearance->ID);
+        _owner->GetPlayer()->RemoveDynamicValue(ACTIVE_PLAYER_DYNAMIC_FIELD_CONDITIONAL_TRANSMOG, itemModifiedAppearance->ID);
         _temporaryAppearances.erase(itr);
     }
 }

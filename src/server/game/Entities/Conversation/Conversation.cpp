@@ -32,6 +32,9 @@ Conversation::Conversation() : WorldObject(false), _duration(0), _textureKitId(0
 
     m_updateFlag.Stationary = true;
     m_updateFlag.Conversation = true;
+
+    m_valuesCount = CONVERSATION_END;
+    _dynamicValuesCount = CONVERSATION_DYNAMIC_END;
 }
 
 Conversation::~Conversation() = default;
@@ -129,7 +132,7 @@ bool Conversation::Create(ObjectGuid::LowType lowGuid, uint32 conversationEntry,
     SetEntry(conversationEntry);
     SetObjectScale(1.0f);
 
-    SetUpdateFieldValue(m_values.ModifyValue(&Conversation::m_conversationData).ModifyValue(&UF::ConversationData::LastLineEndTime), conversationTemplate->LastLineEndTime);
+    SetUInt32Value(CONVERSATION_LAST_LINE_END_TIME, conversationTemplate->LastLineEndTime);
     _duration = conversationTemplate->LastLineEndTime;
     _textureKitId = conversationTemplate->TextureKitId;
 
@@ -137,11 +140,11 @@ bool Conversation::Create(ObjectGuid::LowType lowGuid, uint32 conversationEntry,
     {
         if (actor)
         {
-            UF::ConversationActor& actorField = AddDynamicUpdateFieldValue(m_values.ModifyValue(&Conversation::m_conversationData).ModifyValue(&UF::ConversationData::Actors));
-            actorField.CreatureID = actor->CreatureId;
-            actorField.CreatureDisplayInfoID = actor->CreatureModelId;
-            actorField.Id = actor->Id;
-            actorField.Type = AsUnderlyingType(ActorType::CreatureActor);
+            ConversationDynamicFieldActor actorField;
+            actorField.ActorTemplate.CreatureId = actor->CreatureId;
+            actorField.ActorTemplate.CreatureModelId = actor->CreatureModelId;
+            actorField.Type = ConversationDynamicFieldActor::ActorType::CreatureActor;
+            SetDynamicStructuredValue(CONVERSATION_DYNAMIC_FIELD_ACTORS, actorIndex, &actorField);
         }
     }
 
@@ -159,28 +162,19 @@ bool Conversation::Create(ObjectGuid::LowType lowGuid, uint32 conversationEntry,
     }
 
     std::set<uint16> actorIndices;
-    std::vector<UF::ConversationLine> lines;
     for (ConversationLineTemplate const* line : conversationTemplate->Lines)
     {
         actorIndices.insert(line->ActorIdx);
-        lines.emplace_back();
-        UF::ConversationLine& lineField = lines.back();
-        lineField.ConversationLineID = line->Id;
-        lineField.StartTime = line->StartTime;
-        lineField.UiCameraID = line->UiCameraID;
-        lineField.ActorIndex = line->ActorIdx;
-        lineField.Flags = line->Flags;
+        AddDynamicStructuredValue(CONVERSATION_DYNAMIC_FIELD_LINES, line);
     }
-
-    SetUpdateFieldValue(m_values.ModifyValue(&Conversation::m_conversationData).ModifyValue(&UF::ConversationData::Lines), std::move(lines));
 
     sScriptMgr->OnConversationCreate(this, creator);
 
     // All actors need to be set
     for (uint16 actorIndex : actorIndices)
     {
-        UF::ConversationActor const* actor = actorIndex < m_conversationData->Actors.size() ? &m_conversationData->Actors[actorIndex] : nullptr;
-        if (!actor || (!actor->CreatureID && actor->ActorGUID.IsEmpty() && !actor->NoActorObject))
+        ConversationDynamicFieldActor const* actor = GetDynamicStructuredValue<ConversationDynamicFieldActor>(CONVERSATION_DYNAMIC_FIELD_ACTORS, actorIndex);
+        if (!actor || actor->IsEmpty())
         {
             TC_LOG_ERROR("entities.conversation", "Failed to create conversation (Id: %u) due to missing actor (Idx: %u).", conversationEntry, actorIndex);
             return false;
@@ -195,9 +189,10 @@ bool Conversation::Create(ObjectGuid::LowType lowGuid, uint32 conversationEntry,
 
 void Conversation::AddActor(ObjectGuid const& actorGuid, uint16 actorIdx)
 {
-    auto actorField = m_values.ModifyValue(&Conversation::m_conversationData).ModifyValue(&UF::ConversationData::Actors, actorIdx);
-    SetUpdateFieldValue(actorField.ModifyValue(&UF::ConversationActor::ActorGUID), actorGuid);
-    SetUpdateFieldValue(actorField.ModifyValue(&UF::ConversationActor::Type), AsUnderlyingType(ActorType::WorldObjectActor));
+    ConversationDynamicFieldActor actorField;
+    actorField.ActorGuid = actorGuid;
+    actorField.Type = ConversationDynamicFieldActor::ActorType::WorldObjectActor;
+    SetDynamicStructuredValue(CONVERSATION_DYNAMIC_FIELD_ACTORS, actorIdx, &actorField);
 }
 
 void Conversation::AddParticipant(ObjectGuid const& participantGuid)
@@ -208,63 +203,4 @@ void Conversation::AddParticipant(ObjectGuid const& participantGuid)
 uint32 Conversation::GetScriptId() const
 {
     return sConversationDataStore->GetConversationTemplate(GetEntry())->ScriptId;
-}
-
-void Conversation::BuildValuesCreate(ByteBuffer* data, Player const* target) const
-{
-    UF::UpdateFieldFlag flags = GetUpdateFieldFlagsFor(target);
-    std::size_t sizePos = data->wpos();
-    *data << uint32(0);
-    *data << uint8(flags);
-    m_objectData->WriteCreate(*data, flags, this, target);
-    m_conversationData->WriteCreate(*data, flags, this, target);
-    data->put<uint32>(sizePos, data->wpos() - sizePos - 4);
-}
-
-void Conversation::BuildValuesUpdate(ByteBuffer* data, Player const* target) const
-{
-    UF::UpdateFieldFlag flags = GetUpdateFieldFlagsFor(target);
-    std::size_t sizePos = data->wpos();
-    *data << uint32(0);
-    *data << uint32(m_values.GetChangedObjectTypeMask());
-
-    if (m_values.HasChanged(TYPEID_OBJECT))
-        m_objectData->WriteUpdate(*data, flags, this, target);
-
-    if (m_values.HasChanged(TYPEID_CONVERSATION))
-        m_conversationData->WriteUpdate(*data, flags, this, target);
-
-    data->put<uint32>(sizePos, data->wpos() - sizePos - 4);
-}
-
-void Conversation::BuildValuesUpdateForPlayerWithMask(UpdateData* data, UF::ObjectData::Mask const& requestedObjectMask,
-    UF::ConversationData::Mask const& requestedConversationMask, Player const* target) const
-{
-    UpdateMask<NUM_CLIENT_OBJECT_TYPES> valuesMask;
-    if (requestedObjectMask.IsAnySet())
-        valuesMask.Set(TYPEID_OBJECT);
-
-    if (requestedConversationMask.IsAnySet())
-        valuesMask.Set(TYPEID_CONVERSATION);
-
-    ByteBuffer buffer = PrepareValuesUpdateBuffer();
-    std::size_t sizePos = buffer.wpos();
-    buffer << uint32(0);
-    buffer << uint32(valuesMask.GetBlock(0));
-
-    if (valuesMask[TYPEID_OBJECT])
-        m_objectData->WriteUpdate(buffer, requestedObjectMask, true, this, target);
-
-    if (valuesMask[TYPEID_CONVERSATION])
-        m_conversationData->WriteUpdate(buffer, requestedConversationMask, true, this, target);
-
-    buffer.put<uint32>(sizePos, buffer.wpos() - sizePos - 4);
-
-    data->AddUpdateBlock(buffer);
-}
-
-void Conversation::ClearUpdateMask(bool remove)
-{
-    m_values.ClearChangesMask(&Conversation::m_conversationData);
-    Object::ClearUpdateMask(remove);
 }

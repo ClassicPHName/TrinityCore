@@ -56,6 +56,7 @@ public:
         };
         static std::vector<ChatCommand> modifyCommandTable =
         {
+            { "bit",          rbac::RBAC_PERM_COMMAND_MODIFY_BIT,          false, &HandleModifyBitCommand,           "" },
             { "currency",     rbac::RBAC_PERM_COMMAND_MODIFY_CURRENCY,     false, &HandleModifyCurrencyCommand,      "" },
             { "drunk",        rbac::RBAC_PERM_COMMAND_MODIFY_DRUNK,        false, &HandleModifyDrunkCommand,         "" },
             { "energy",       rbac::RBAC_PERM_COMMAND_MODIFY_ENERGY,       false, &HandleModifyEnergyCommand,        "" },
@@ -220,11 +221,10 @@ public:
 
         if (!pfactionid)
         {
-            uint32 factionid = target->GetFaction();
-            uint32 flag      = target->m_unitData->Flags;
-            uint64 npcflag;
-            memcpy(&npcflag, target->m_unitData->NpcFlags.begin(), sizeof(uint64));
-            uint32 dyflag    = target->m_objectData->DynamicFlags;
+            uint32 factionid = target->getFaction();
+            uint32 flag      = target->GetUInt32Value(UNIT_FIELD_FLAGS);
+            uint64 npcflag   = target->GetUInt64Value(UNIT_NPC_FLAGS);
+            uint32 dyflag    = target->GetUInt32Value(OBJECT_DYNAMIC_FLAGS);
             handler->PSendSysMessage(LANG_CURRENT_FACTION, target->GetGUID().ToString().c_str(), factionid, flag, std::to_string(npcflag).c_str(), dyflag);
             return true;
         }
@@ -234,7 +234,7 @@ public:
 
         char *pflag = strtok(nullptr, " ");
         if (!pflag)
-            flag = target->m_unitData->Flags;
+            flag = target->GetUInt32Value(UNIT_FIELD_FLAGS);
         else
             flag = atoul(pflag);
 
@@ -242,7 +242,7 @@ public:
 
         uint64 npcflag;
         if (!pnpcflag)
-            memcpy(&npcflag, target->m_unitData->NpcFlags.begin(), sizeof(uint64));
+            npcflag = target->GetUInt64Value(UNIT_NPC_FLAGS);
         else
             npcflag = atoull(pnpcflag);
 
@@ -250,7 +250,7 @@ public:
 
         uint32  dyflag;
         if (!pdyflag)
-            dyflag = target->m_objectData->DynamicFlags;
+            dyflag = target->GetUInt32Value(OBJECT_DYNAMIC_FLAGS);
         else
             dyflag = atoul(pdyflag);
 
@@ -263,11 +263,10 @@ public:
 
         handler->PSendSysMessage(LANG_YOU_CHANGE_FACTION, target->GetGUID().ToString().c_str(), factionid, flag, std::to_string(npcflag).c_str(), dyflag);
 
-        target->SetFaction(factionid);
-        target->SetUnitFlags(UnitFlags(flag));
-        target->SetNpcFlags(NPCFlags(npcflag & 0xFFFFFFFF));
-        target->SetNpcFlags2(NPCFlags2(npcflag >> 32));
-        target->SetDynamicFlags(dyflag);
+        target->setFaction(factionid);
+        target->SetUInt32Value(UNIT_FIELD_FLAGS, flag);
+        target->SetUInt64Value(UNIT_NPC_FLAGS, npcflag);
+        target->SetUInt32Value(OBJECT_DYNAMIC_FLAGS, dyflag);
 
         return true;
     }
@@ -497,7 +496,7 @@ public:
         {
             NotifyModification(handler, target, LANG_YOU_CHANGE_SIZE, LANG_YOURS_SIZE_CHANGED, Scale);
             if (Creature* creatureTarget = target->ToCreature())
-                creatureTarget->SetDisplayId(creatureTarget->GetDisplayId(), Scale);
+                creatureTarget->SetFloatValue(UNIT_FIELD_DISPLAY_SCALE, Scale);
             else
                 target->SetObjectScale(Scale);
             return true;
@@ -615,7 +614,62 @@ public:
         return true;
     }
 
-    static bool HandleModifyHonorCommand(ChatHandler* handler, char const* args)
+    //Edit Unit field
+    static bool HandleModifyBitCommand(ChatHandler* handler, const char* args)
+    {
+        if (!*args)
+            return false;
+
+        Unit* target = handler->getSelectedUnit();
+        if (!target)
+        {
+            handler->SendSysMessage(LANG_NO_CHAR_SELECTED);
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        // check online security
+        if (target->GetTypeId() == TYPEID_PLAYER && handler->HasLowerSecurity(target->ToPlayer(), ObjectGuid::Empty))
+            return false;
+
+        char* pField = strtok((char*)args, " ");
+        if (!pField)
+            return false;
+
+        char* pBit = strtok(NULL, " ");
+        if (!pBit)
+            return false;
+
+        uint16 field = atoi(pField);
+        uint32 bit   = atoi(pBit);
+
+        if (field < OBJECT_END || field >= target->GetValuesCount())
+        {
+            handler->SendSysMessage(LANG_BAD_VALUE);
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+        if (bit < 1 || bit > 32)
+        {
+            handler->SendSysMessage(LANG_BAD_VALUE);
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        if (target->HasFlag(field, (1<<(bit-1))))
+        {
+            target->RemoveFlag(field, (1<<(bit-1)));
+            handler->PSendSysMessage(LANG_REMOVE_BIT, bit, field);
+        }
+        else
+        {
+            target->SetFlag(field, (1<<(bit-1)));
+            handler->PSendSysMessage(LANG_SET_BIT, bit, field);
+        }
+        return true;
+    }
+
+    static bool HandleModifyHonorCommand(ChatHandler* handler, const char* args)
     {
         if (!*args)
             return false;
@@ -837,7 +891,7 @@ public:
             return false;
 
         uint32 anim_id = atoi((char*)args);
-        handler->GetSession()->GetPlayer()->SetEmoteState(Emote(anim_id));
+        handler->GetSession()->GetPlayer()->SetUInt32Value(UNIT_NPC_EMOTESTATE, anim_id);
 
         return true;
     }
@@ -887,8 +941,8 @@ public:
         }
 
         // Set gender
-        target->SetGender(gender);
-        target->SetNativeSex(gender);
+        target->SetByteValue(UNIT_FIELD_BYTES_0, UNIT_BYTES_0_OFFSET_GENDER, gender);
+        target->SetByteValue(PLAYER_BYTES_3, PLAYER_BYTES_3_OFFSET_GENDER, gender);
 
         // Change display ID
         target->InitDisplayIds();

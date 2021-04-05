@@ -46,7 +46,7 @@ class TC_GAME_API Bag : public Item
         uint8 GetSlotByItemGUID(ObjectGuid guid) const;
         bool IsEmpty() const;
         uint32 GetFreeSlots() const;
-        uint32 GetBagSize() const { return m_containerData->NumSlots; }
+        uint32 GetBagSize() const { return GetUInt32Value(CONTAINER_FIELD_NUM_SLOTS); }
 
         // DB operations
         // overwrite virtual Item::SaveToDB
@@ -56,21 +56,8 @@ class TC_GAME_API Bag : public Item
         // overwrite virtual Item::DeleteFromDB
         void DeleteFromDB(CharacterDatabaseTransaction& trans) override;
 
-    protected:
         void BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) const override;
-        void BuildValuesCreate(ByteBuffer* data, Player const* target) const override;
-        void BuildValuesUpdate(ByteBuffer* data, Player const* target) const override;
-        void ClearUpdateMask(bool remove) override;
-
-    public:
-        void BuildValuesUpdateForPlayerWithMask(UpdateData* data, UF::ObjectData::Mask const& requestedObjectMask, UF::ItemData::Mask const& requestedItemMask,
-            UF::ContainerData::Mask const& requestedContainerMask, Player const* target) const;
-
-        UF::UpdateField<UF::ContainerData, 0, TYPEID_CONTAINER> m_containerData;
-
     protected:
-        void SetBagSize(uint32 numSlots) { SetUpdateFieldValue(m_values.ModifyValue(&Bag::m_containerData).ModifyValue(&UF::ContainerData::NumSlots), numSlots); }
-        void SetSlot(uint32 slot, ObjectGuid guid) { SetUpdateFieldValue(m_values.ModifyValue(&Bag::m_containerData).ModifyValue(&UF::ContainerData::Slots, slot), guid); }
 
         // Bag Storage space
         Item* m_bagslot[MAX_BAG_SIZE];

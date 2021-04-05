@@ -414,8 +414,8 @@ public:
                             if (!creature)
                                 continue;
                             creature->SetFaction(35);
-                            creature->AddUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
-                            creature->AddUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+                            creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                             creature->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
                             AffrayChallenger[i] = creature->GetGUID();
                         }
@@ -451,8 +451,8 @@ public:
                             Creature* creature = ObjectAccessor::GetCreature(*me, AffrayChallenger[Wave]);
                             if (creature && (creature->IsAlive()))
                             {
-                                creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
-                                creature->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+                                creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                                creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                                 creature->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
                                 creature->SetFaction(14);
                                 creature->AI()->AttackStart(warrior);
@@ -483,8 +483,8 @@ public:
                             }
                             else // Makes BIG WILL attackable.
                             {
-                                creature->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
-                                creature->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+                                creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                                creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                                 creature->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
                                 creature->SetFaction(14);
                                 creature->AI()->AttackStart(warrior);

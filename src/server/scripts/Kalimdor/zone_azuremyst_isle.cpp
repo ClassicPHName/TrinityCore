@@ -87,8 +87,8 @@ public:
 
             DoCastSelf(SPELL_IRRIDATION, true);
 
-            me->AddUnitFlag(UNIT_FLAG_PVP_ATTACKABLE);
-            me->AddUnitFlag(UNIT_FLAG_IN_COMBAT);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
             me->SetHealth(me->CountPctFromMaxHealth(10));
             me->SetStandState(UNIT_STAND_STATE_SLEEP);
         }
@@ -117,7 +117,7 @@ public:
                 _canAskForHelp = false;
                 _canUpdateEvents = true;
 
-                me->RemoveUnitFlag(UNIT_FLAG_PVP_ATTACKABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
                 me->SetStandState(UNIT_STAND_STATE_STAND);
 
                 _playerGUID = caster->GetGUID();
@@ -203,7 +203,7 @@ public:
         {
             Initialize();
             NormFaction = creature->GetFaction();
-            NpcFlags = NPCFlags(creature->m_unitData->NpcFlags[0]);
+            NpcFlags = creature->GetUInt32Value(UNIT_NPC_FLAGS);
         }
 
         void Initialize()
@@ -222,7 +222,7 @@ public:
             Initialize();
 
             me->SetFaction(NormFaction);
-            me->SetNpcFlags(NpcFlags);
+            me->SetUInt32Value(UNIT_NPC_FLAGS, NpcFlags);
         }
 
         void EnterCombat(Unit* who) override
@@ -266,7 +266,7 @@ public:
 
     private:
         uint32 NormFaction;
-        NPCFlags NpcFlags;
+        uint32 NpcFlags;
         uint32 DynamiteTimer;
         uint32 EmoteTimer;
         bool   IsTreeEvent;
@@ -293,7 +293,7 @@ public:
 
         void Reset() override
         {
-            me->AddUnitFlag(UNIT_FLAG_IN_COMBAT);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
             me->SetHealth(me->CountPctFromMaxHealth(15));
             switch (urand(0, 1))
             {
@@ -413,7 +413,7 @@ public:
                         _events.ScheduleEvent(EVENT_STAND, Seconds(2));
                         break;
                     case EVENT_STAND: // Remove kneel standstate. Using a separate delayed event because it causes unwanted delay before starting waypoint movement.
-                        me->SetStandState(UNIT_STAND_STATE_STAND);
+                        me->SetByteValue(UNIT_FIELD_BYTES_1, 0, 0);
                         break;
                     case EVENT_TALK_END:
                         if (Player* player = ObjectAccessor::GetPlayer(*me, _player))
@@ -510,7 +510,7 @@ public:
             {
                 SparkGUID = Spark->GetGUID();
                 Spark->setActive(true);
-                Spark->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+                Spark->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
             }
             SayTimer = 8000;
         }
@@ -642,12 +642,9 @@ public:
             me->UseDoorOrButton();
             if (player->GetQuestStatus(QUEST_STRENGTH_ONE) == QUEST_STATUS_INCOMPLETE)
             {
-                if (Creature* ravager = me->FindNearestCreature(NPC_DEATH_RAVAGER, 5.0f, true))
-                {
-                    ravager->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
-                    ravager->SetReactState(REACT_AGGRESSIVE);
-                    ravager->AI()->AttackStart(player);
-                }
+                ravager->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                ravager->SetReactState(REACT_AGGRESSIVE);
+                ravager->AI()->AttackStart(player);
             }
             return true;
         }
@@ -684,7 +681,7 @@ public:
         {
             Initialize();
 
-            me->AddUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
             me->SetReactState(REACT_PASSIVE);
         }
 

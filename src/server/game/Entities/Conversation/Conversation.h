@@ -25,20 +25,50 @@
 class Unit;
 class SpellInfo;
 
+#pragma pack(push, 1)
+struct ConversationDynamicFieldActor
+{
+    ConversationDynamicFieldActor() : Type(0), Padding(0)
+    {
+        memset(Raw.Data, 0, sizeof(Raw.Data));
+    }
+
+    bool IsEmpty() const
+    {
+        return ActorGuid.IsEmpty(); // this one is good enough
+    }
+
+    enum ActorType
+    {
+        WorldObjectActor = 0,
+        CreatureActor = 1
+    };
+
+    union
+    {
+        ObjectGuid ActorGuid;
+        struct
+        {
+            uint32 CreatureId;
+            uint32 CreatureModelId;
+        } ActorTemplate;
+
+        struct
+        {
+            uint32 Data[4];
+        } Raw;
+    };
+
+    uint32 Type;
+    uint32 Padding;
+};
+#pragma pack(pop)
+
 class TC_GAME_API Conversation : public WorldObject, public GridObject<Conversation>
 {
     public:
         Conversation();
         ~Conversation();
-
-    protected:
-        void BuildValuesCreate(ByteBuffer* data, Player const* target) const override;
-        void BuildValuesUpdate(ByteBuffer* data, Player const* target) const override;
-        void ClearUpdateMask(bool remove) override;
-
-    public:
-        void BuildValuesUpdateForPlayerWithMask(UpdateData* data, UF::ObjectData::Mask const& requestedObjectMask,
-            UF::ConversationData::Mask const& requestedConversationMask, Player const* target) const;
 
         void AddToWorld() override;
         void RemoveFromWorld() override;
@@ -64,14 +94,6 @@ class TC_GAME_API Conversation : public WorldObject, public GridObject<Conversat
         void RelocateStationaryPosition(Position const& pos) { _stationaryPosition.Relocate(pos); }
 
         uint32 GetScriptId() const;
-
-        UF::UpdateField<UF::ConversationData, 0, TYPEID_CONVERSATION> m_conversationData;
-
-        enum class ActorType
-        {
-            WorldObjectActor = 0,
-            CreatureActor = 1
-        };
 
     private:
         Position _stationaryPosition;

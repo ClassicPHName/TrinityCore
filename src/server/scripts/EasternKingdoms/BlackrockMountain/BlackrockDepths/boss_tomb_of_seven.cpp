@@ -131,7 +131,6 @@ class boss_doomrel : public CreatureScript
 {
     public:
         boss_doomrel() : CreatureScript("boss_doomrel") { }
-
         struct boss_doomrelAI : public ScriptedAI
         {
             boss_doomrelAI(Creature* creature) : ScriptedAI(creature)
@@ -152,12 +151,12 @@ class boss_doomrel : public CreatureScript
                 me->SetFaction(FACTION_FRIENDLY);
 
                 // was set before event start, so set again
-                me->SetImmuneToPC(true);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
 
                 if (_instance->GetData(DATA_GHOSTKILL) >= 7)
-                    me->SetNpcFlags(UNIT_NPC_FLAG_NONE);
+                    me->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
                 else
-                    me->SetNpcFlags(UNIT_NPC_FLAG_GOSSIP);
+                    me->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
             }
 
             void EnterCombat(Unit* /*who*/) override

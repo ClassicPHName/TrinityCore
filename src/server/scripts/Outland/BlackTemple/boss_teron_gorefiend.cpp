@@ -117,8 +117,8 @@ struct boss_teron_gorefiend : public BossAI
         _Reset();
         if (instance->GetData(DATA_TERON_GOREFIEND_INTRO))
         {
-            me->AddUnitFlag(UnitFlags(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE));
-            me->SetReactState(REACT_PASSIVE);
+            creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+            creature->SetReactState(REACT_PASSIVE);
         }
     }
 

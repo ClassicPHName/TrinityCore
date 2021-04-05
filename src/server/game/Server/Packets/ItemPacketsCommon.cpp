@@ -50,21 +50,27 @@ bool ItemModList::operator==(ItemModList const& r) const
 void ItemInstance::Initialize(::Item const* item)
 {
     ItemID = item->GetEntry();
-    std::vector<int32> const& bonusListIds = item->m_itemData->BonusListIDs;
+    std::vector<uint32> const& bonusListIds = item->GetDynamicValues(ITEM_DYNAMIC_FIELD_BONUSLIST_IDS);
     if (!bonusListIds.empty())
     {
         ItemBonus = boost::in_place();
         ItemBonus->BonusListIDs.insert(ItemBonus->BonusListIDs.end(), bonusListIds.begin(), bonusListIds.end());
-        ItemBonus->Context = item->GetContext();
+        ItemBonus->Context = item->GetUInt32Value(ITEM_FIELD_CONTEXT);
     }
 
-    for (UF::ItemMod mod : item->m_itemData->Modifiers->Values)
-        Modifications.Values.emplace_back(mod.Value, ItemModifier(mod.Type));
+    if (uint32 mask = item->GetUInt32Value(ITEM_FIELD_MODIFIERS_MASK))
+    {
+        Modifications = boost::in_place();
+
+        for (size_t i = 0; mask != 0; mask >>= 1, ++i)
+            if ((mask & 1) != 0)
+                Modifications->Insert(i, item->GetModifier(ItemModifier(i)));
+    }
 }
 
-void ItemInstance::Initialize(UF::SocketedGem const* gem)
+void WorldPackets::Item::ItemInstance::Initialize(::ItemDynamicFieldGems const* gem)
 {
-    ItemID = gem->ItemID;
+    ItemID = gem->ItemId;
 
     ItemBonuses bonus;
     bonus.Context = ItemContext(*gem->Context);

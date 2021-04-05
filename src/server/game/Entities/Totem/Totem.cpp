@@ -61,12 +61,12 @@ void Totem::InitStats(uint32 duration)
             data.Totem = GetGUID();
             data.Slot = m_Properties->Slot - SUMMON_SLOT_TOTEM;
             data.Duration = duration;
-            data.SpellID = m_unitData->CreatedBySpell;
+            data.SpellID = GetUInt32Value(UNIT_CREATED_BY_SPELL);
             owner->SendDirectMessage(data.Write());
         }
 
         // set display id depending on caster's race
-        if (uint32 totemDisplayId = sSpellMgr->GetModelForTotem(m_unitData->CreatedBySpell, owner->getRace()))
+        if (uint32 totemDisplayId = sSpellMgr->GetModelForTotem(GetUInt32Value(UNIT_CREATED_BY_SPELL), owner->getRace()))
             SetDisplayId(totemDisplayId);
     }
 
@@ -120,7 +120,7 @@ void Totem::UnSummon(uint32 msTime)
     {
         owner->SendAutoRepeatCancel(this);
 
-        if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_unitData->CreatedBySpell, GetMap()->GetDifficultyID()))
+        if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(GetUInt32Value(UNIT_CREATED_BY_SPELL), GetMap()->GetDifficultyID()))
             GetSpellHistory()->SendCooldownEvent(spell, 0, nullptr, false);
 
         if (Group* group = owner->GetGroup())

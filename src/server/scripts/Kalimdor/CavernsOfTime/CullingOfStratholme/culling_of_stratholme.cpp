@@ -328,14 +328,14 @@ public:
 
             bStepping = true;
             step = 0;
-            me->AddNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+            me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
             bossEvent = DATA_MEATHOOK;
             gossipStep = 0;
         }
 
         void AttackStart(Unit* who) override
         {
-            if (who && !who->IsImmuneToPC())
+            if (who && !who->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC))
                 EscortAI::AttackStart(who);
         }
 
@@ -359,7 +359,7 @@ public:
                 if (Creature* temp = me->SummonCreature((uint32)RiftAndSpawnsLocations[i][0], RiftAndSpawnsLocations[timeRiftID][1], RiftAndSpawnsLocations[timeRiftID][2], RiftAndSpawnsLocations[timeRiftID][3], RiftAndSpawnsLocations[timeRiftID][4], TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 900000))
                 {
                     guidVector[i-timeRiftID-1] = temp->GetGUID();
-                    temp->SetImmuneToAll(true);
+                    temp->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
                     temp->SetReactState(REACT_PASSIVE);
                     temp->GetMotionMaster()->MovePoint(0, RiftAndSpawnsLocations[i][1], RiftAndSpawnsLocations[i][2], RiftAndSpawnsLocations[i][3]);
                     if ((uint32)RiftAndSpawnsLocations[i][0] == NPC_EPOCH)
@@ -416,7 +416,7 @@ public:
                     break;
                 case 8:
                     gossipStep = 1;
-                    me->AddNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+                    me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                     SetHoldState(true);
                     break;
                 case 12:
@@ -441,7 +441,7 @@ public:
                     break;
                 case 20:
                     gossipStep = 2;
-                    me->AddNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+                    me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                     SetRun(false);
                     SetHoldState(true);
                     break;
@@ -487,7 +487,7 @@ public:
                 case 45:
                     SetRun(true);
                     gossipStep = 4;
-                    me->AddNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+                    me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                     SetHoldState(true);
                     break;
                 case 48:
@@ -503,7 +503,7 @@ public:
                     break;
                 case 51:
                     gossipStep = 5;
-                    me->AddNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+                    me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                     SetHoldState(true);
                     break;
              }
@@ -951,7 +951,7 @@ public:
                             {
                                 disguised2->UpdateEntry(NPC_INFINITE_HUNTER);
                                 //Make them unattackable
-                                disguised2->SetImmuneToAll(true);
+                                disguised2->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
                                 disguised2->SetReactState(REACT_PASSIVE);
                             }
                             JumpToNextStep(2000);
@@ -961,7 +961,7 @@ public:
                             {
                                 disguised1->UpdateEntry(NPC_INFINITE_AGENT);
                                 //Make them unattackable
-                                disguised1->SetImmuneToAll(true);
+                                disguised1->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
                                 disguised1->SetReactState(REACT_PASSIVE);
                             }
                             JumpToNextStep(2000);
@@ -971,7 +971,7 @@ public:
                             {
                                 disguised0->UpdateEntry(NPC_INFINITE_ADVERSARY);
                                 //Make them unattackable
-                                disguised0->SetImmuneToAll(true);
+                                disguised0->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
                                 disguised0->SetReactState(REACT_PASSIVE);
                             }
                             JumpToNextStep(2000);
@@ -985,7 +985,7 @@ public:
                             for (uint32 i = 0; i< ENCOUNTER_DRACONIAN_NUMBER; ++i)
                                 if (Creature* temp = ObjectAccessor::GetCreature(*me, infiniteDraconianGUID[i]))
                                 {
-                                    temp->SetImmuneToAll(false);
+                                    temp->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
                                     temp->SetReactState(REACT_AGGRESSIVE);
                                 }
                             JumpToNextStep(5000);
@@ -1043,7 +1043,7 @@ public:
                                 if (Creature* epoch = ObjectAccessor::GetCreature(*me, epochGUID))
                                 {
                                     //Make Epoch attackable
-                                    epoch->SetImmuneToAll(false);
+                                    epoch->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_NON_ATTACKABLE);
                                     epoch->SetReactState(REACT_AGGRESSIVE);
                                 }
 
@@ -1054,7 +1054,7 @@ public:
                             if (instance->GetBossState(DATA_EPOCH) == DONE)
                             {
                                 gossipStep = 3;
-                                me->AddNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+                                me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                                 bStepping = false;
                                 bossEvent = DATA_MAL_GANIS;
                                 JumpToNextStep(15000);
@@ -1093,7 +1093,7 @@ public:
                         case 87:
                             if (Creature* malganis = ObjectAccessor::GetCreature(*me, malganisGUID))
                             {
-                                malganis->RemoveUnitFlag(UnitFlags(UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_UNK_6 | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_UNK_15));
+                                malganis->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_UNK_6 | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_UNK_15);
                                 malganis->SetReactState(REACT_AGGRESSIVE);
                             }
                             JumpToNextStep(1000);

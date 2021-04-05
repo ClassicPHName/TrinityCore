@@ -45,6 +45,16 @@ void WorldSession::HandleInspectOpcode(WorldPackets::Inspect::Inspect& inspect)
     WorldPackets::Inspect::InspectResult inspectResult;
     inspectResult.DisplayInfo.Initialize(player);
 
+    /// @TODO: Investigate if this still exists
+    //for (uint8 i = 0; i < EQUIPMENT_SLOT_END; ++i)
+    //{
+    //    if (Item* item = player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+    //        inspectResult.Items.emplace_back(item, i);
+    //}
+
+    //inspectResult.ClassID = player->getClass();
+    //inspectResult.GenderID = player->GetByteValue(PLAYER_BYTES_3, PLAYER_BYTES_3_OFFSET_GENDER);
+
     if (GetPlayer()->CanBeGameMaster() || sWorld->getIntConfig(CONFIG_TALENTS_INSPECTING) + (GetPlayer()->GetTeamId() == player->GetTeamId()) > 1)
     {
         PlayerTalentMap const* talents = player->GetTalentMap(player->GetActiveTalentGroup());
@@ -65,16 +75,13 @@ void WorldSession::HandleInspectOpcode(WorldPackets::Inspect::Inspect& inspect)
         inspectResult.GuildData->AchievementPoints = guild->GetAchievementMgr().GetAchievementPoints();
     }
 
-    if (Item const* heartOfAzeroth = player->GetItemByEntry(ITEM_ID_HEART_OF_AZEROTH, ITEM_SEARCH_EVERYWHERE))
-        if (AzeriteItem const* azeriteItem = heartOfAzeroth->ToAzeriteItem())
-            inspectResult.AzeriteLevel = azeriteItem->GetEffectiveLevel();
-
-    inspectResult.ItemLevel = int32(player->GetAverageItemLevel());
-    inspectResult.LifetimeMaxRank = player->m_activePlayerData->LifetimeMaxRank;
-    inspectResult.TodayHK = player->m_activePlayerData->TodayHonorableKills;
-    inspectResult.YesterdayHK = player->m_activePlayerData->YesterdayHonorableKills;
-    inspectResult.LifetimeHK = player->m_activePlayerData->LifetimeHonorableKills;
-    inspectResult.HonorLevel = player->m_playerData->HonorLevel;
+    inspectResult.InspecteeGUID = inspect.Target;
+    inspectResult.SpecializationID = player->GetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID);
+    inspectResult.LifetimeMaxRank = player->GetByteValue(ACTIVE_PLAYER_FIELD_BYTES, PLAYER_FIELD_BYTES_OFFSET_LIFETIME_MAX_PVP_RANK);
+    inspectResult.TodayHK = player->GetUInt16Value(ACTIVE_PLAYER_FIELD_KILLS, PLAYER_FIELD_KILLS_OFFSET_TODAY_KILLS);
+    inspectResult.YesterdayHK = player->GetUInt16Value(ACTIVE_PLAYER_FIELD_KILLS, PLAYER_FIELD_KILLS_OFFSET_YESTERDAY_KILLS);
+    inspectResult.LifetimeHK = player->GetUInt32Value(ACTIVE_PLAYER_FIELD_LIFETIME_HONORABLE_KILLS);
+    inspectResult.HonorLevel = player->GetUInt32Value(PLAYER_FIELD_HONOR_LEVEL);
 
     SendPacket(inspectResult.Write());
 }

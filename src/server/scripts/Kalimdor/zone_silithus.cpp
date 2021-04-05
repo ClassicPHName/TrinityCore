@@ -359,7 +359,7 @@ public:
         {
             Initialize();
 
-            me->AddUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
         }
 
         void HandleAnimation()
@@ -843,7 +843,7 @@ public:
                 if (Creature* spawn = me->SummonCreature(WavesInfo[WaveCount].CreatureId, SpawnLocation[i], TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, desptimer))
                 {
                     if (spawn->GetEntry() == NPC_KALDOREI_INFANTRY)
-                        spawn->SetDisplayId(15427 + rand32() % 4);
+                        spawn->SetUInt32Value(UNIT_FIELD_DISPLAYID, 15427 + rand32() % 4);
                     if (i >= 30) WaveCount = 1;
                     if (i >= 33) WaveCount = 2;
                     if (i >= 45) WaveCount = 3;
@@ -973,27 +973,27 @@ public:
             {
                 if (Creature* trigger = me->FindNearestCreature(ANACHRONOS_QUEST_TRIGGER_INVISIBLE, 100))
                 {
-                    Unit* Merithra = trigger->SummonCreature(NPC_MERITHRA_OF_THE_DREAM, -8034.535f, 1535.14f, 2.61f, 0, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 220000);
-                    Unit* Caelestrasz = trigger->SummonCreature(NPC_CAELESTRASZ, -8032.767f, 1533.148f, 2.61f, 1.5f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 220000);
-                    Unit* Arygos = trigger->SummonCreature(NPC_ARYGOS, -8034.52f, 1537.843f, 2.61f, 5.7f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 220000);
-                    /* Unit* Fandral = */ trigger->SummonCreature(NPC_FANDRAL_STAGHELM, -8028.462f, 1535.843f, 2.61f, 3.141592f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 220000);
-                    Creature* Anachronos = trigger->SummonCreature(NPC_ANACHRONOS, -8028.75f, 1538.795f, 2.61f, 4, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 220000);
+                    Merithra->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+                    Merithra->SetUInt32Value(UNIT_FIELD_BYTES_1, 0);
+                    Merithra->SetUInt32Value(UNIT_FIELD_DISPLAYID, MERITHRA_NIGHT_ELF_FORM);
+                    Merithra->setFaction(FACTION_FRIENDLY);
+                }
 
-                    if (Merithra)
-                    {
-                        Merithra->SetNpcFlags(UNIT_NPC_FLAG_NONE);
-                        Merithra->SetStandState(UNIT_STAND_STATE_STAND);
-                        Merithra->SetDisplayId(MERITHRA_NIGHT_ELF_FORM);
-                        Merithra->SetFaction(FACTION_FRIENDLY);
-                    }
+                if (Caelestrasz)
+                {
+                    Caelestrasz->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+                    Caelestrasz->SetUInt32Value(UNIT_FIELD_BYTES_1, 0);
+                    Caelestrasz->SetUInt32Value(UNIT_FIELD_DISPLAYID, CAELESTRASZ_NIGHT_ELF_FORM);
+                    Caelestrasz->setFaction(FACTION_FRIENDLY);
+                }
 
-                    if (Caelestrasz)
-                    {
-                        Caelestrasz->SetNpcFlags(UNIT_NPC_FLAG_NONE);
-                        Caelestrasz->SetStandState(UNIT_STAND_STATE_STAND);
-                        Caelestrasz->SetDisplayId(CAELESTRASZ_NIGHT_ELF_FORM);
-                        Caelestrasz->SetFaction(FACTION_FRIENDLY);
-                    }
+                if (Arygos)
+                {
+                    Arygos->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+                    Arygos->SetUInt32Value(UNIT_FIELD_BYTES_1, 0);
+                    Arygos->SetUInt32Value(UNIT_FIELD_DISPLAYID, ARYGOS_GNOME_FORM);
+                    Arygos->setFaction(FACTION_FRIENDLY);
+                }
 
                     if (Arygos)
                     {
